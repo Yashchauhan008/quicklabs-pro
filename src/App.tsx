@@ -11,8 +11,6 @@ import { Unauthorized } from '@/components/admin/Unauthorized';
 import { ROUTES } from '@/config';
 import { Register } from './pages/Register';
 
-//todo: why reactNOde
-
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isLoggedIn, isLoadingUser } = useAuth();
 

@@ -1,8 +1,6 @@
 export const serverDetails = {
     serverProxyURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001',
   };
-
-  //todo: env had red line up there to solver that user interface in type is imported in auth type
   
   export const PERMISSIONS_CONFIG = {
     // Dashboard
