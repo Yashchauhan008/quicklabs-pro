@@ -13,7 +13,7 @@ export const NotFound = () => {
         The page you are looking for doesn't exist or has been moved.
       </p>
       <Button asChild>
-        <Link to={ROUTES.DASHBOARD}>Go to Dashboard</Link>
+        <Link to={ROUTES.DASHBOARD}>Back to home</Link>
       </Button>
     </div>
   );

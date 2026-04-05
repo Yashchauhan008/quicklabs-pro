@@ -47,7 +47,8 @@ export const Login = () => {
           id: user.id,
           name: user.name,
           email: user.email,
-          is_root_user: false, // Will be updated from authMeta
+          is_root_user: user.role === 'admin',
+          role: user.role,
         };
 
         login(authUser, token, expiresAt.toISOString());
@@ -65,12 +66,15 @@ export const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>
-            Enter your credentials to access your account
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-50 via-background to-violet-50/70 p-4 dark:from-background dark:via-background dark:to-primary/10">
+      <Card className="w-full max-w-md border-0 shadow-xl ring-1 ring-black/[0.06] dark:ring-white/[0.08]">
+        <CardHeader className="space-y-3 text-center">
+          <p className="text-sm font-semibold text-primary">QuickLabs Learning</p>
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            Welcome back
+          </CardTitle>
+          <CardDescription className="text-base">
+            Sign in to access your courses and materials
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -1,20 +1,39 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { BookX } from 'lucide-react';
 import { ROUTES } from '@/config';
 
 export const Unauthorized = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
-      <ShieldAlert className="h-24 w-24 text-destructive mb-4" />
-      <h1 className="text-6xl font-bold text-primary mb-2">403</h1>
-      <p className="text-xl text-muted-foreground mb-2">Unauthorized</p>
-      <p className="text-muted-foreground mb-8 text-center max-w-md">
-        You don't have permission to access this resource
-      </p>
-      <Button asChild>
-        <Link to={ROUTES.DASHBOARD}>Go to Dashboard</Link>
-      </Button>
+    <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center p-4">
+      <Card className="w-full max-w-md border-0 text-center shadow-lg ring-1 ring-black/[0.06] dark:ring-white/[0.08]">
+        <CardHeader className="space-y-4 pb-2">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+            <BookX className="h-8 w-8" />
+          </div>
+          <CardTitle className="text-2xl">You can&apos;t open this</CardTitle>
+          <CardDescription className="text-base">
+            This page isn&apos;t available for your account. If you think
+            that&apos;s a mistake, contact your instructor or support.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Error code 403</p>
+        </CardContent>
+        <CardFooter className="flex justify-center pb-6">
+          <Button asChild className="rounded-lg">
+            <Link to={ROUTES.DASHBOARD}>Back to home</Link>
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 };

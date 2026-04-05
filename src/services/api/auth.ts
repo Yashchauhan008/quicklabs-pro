@@ -3,8 +3,8 @@ import type {
   AuthResponse,
   LoginCredentials,
   RegisterCredentials,
-  // AuthMeta,
 } from '../../types/auth.type';
+import { setApiScopeCookie } from '@/utils/apiScope';
 
 // ===================== Account  =====================
 
@@ -46,7 +46,15 @@ export const accountLogout = () => {
 //   const url = `/api/auth/profile`;
 //   return axios({ method: 'GET', url });
 // };
-export const getAuthMeta = () => {
-  const url = `/api/auth/profile`;
-  return axios({ method: 'GET', url });
+export const getAuthMeta = async () => {
+  const body = await axios({ method: 'GET', url: `/api/auth/profile` });
+  const data = body && typeof body === 'object' && 'data' in body
+    ? (body as { data?: { role?: string } }).data
+    : undefined;
+  if (data?.role) {
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+    setApiScopeCookie(data.role, expiresAt);
+  }
+  return body;
 };

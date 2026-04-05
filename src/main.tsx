@@ -4,9 +4,7 @@ import App from './App.tsx';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 
-//todo: why i have to import this ? scc client not needs this cause some tailwind error
 import './styles/base.css';
-//todo: tailwind not worked initially tried cracko still not worked 
 
 //todo: why we used QueryClient
 const queryClient = new QueryClient({

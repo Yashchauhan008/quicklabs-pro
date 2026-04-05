@@ -26,24 +26,33 @@ export const serverDetails = {
   
   export const TOKEN_COOKIE_NAME = 'token';
   export const USER_COOKIE_NAME = 'user';
+  /** Matches Postman `api_scope`: `admin` | `students` — used for `/api/{scope}/...` */
+  export const API_SCOPE_COOKIE_NAME = 'api_scope';
   
   export const ROUTES = {
     // Public
     LOGIN: '/login',
     REGISTER: '/register',
     
-    // Admin
-    DASHBOARD: '/admin/dashboard',
-    PROFILE: '/admin/profile',
-    SETTINGS: '/admin/settings',
-    UNAUTHORIZED: '/admin/unauthorized',
+    // Authenticated app (learning platform)
+    DASHBOARD: '/learn/dashboard',
+    PROFILE: '/learn/profile',
+    SETTINGS: '/learn/settings',
+    UNAUTHORIZED: '/learn/unauthorized',
     
-    // Subjects
-    SUBJECTS: '/admin/subject',
-    SUBJECT_DETAILS: '/admin/subject/:id',
+    EXPLORE_COURSES: '/learn/explore/courses',
+    EXPLORE_MATERIALS: '/learn/explore/materials',
+
+    SUBJECTS: '/learn/subject',
+    SUBJECT_CREATE: '/learn/subject/create',
+    SUBJECT_DETAILS: '/learn/subject/:id',
+    SUBJECT_EDIT: '/learn/subject/:id/edit',
     
-    // Documents
-    DOCUMENTS: '/admin/document',
-    DOCUMENT_DETAILS: '/admin/document/:id',
-    ADD_DOCUMENT: '/admin/document/add',
+    DOCUMENT_DETAILS: '/learn/document/:id',
+    ADD_DOCUMENT: '/learn/document/add',
+
+    PEERS: '/learn/peers',
+    PEER_PROFILE: '/learn/peers/:peerId',
+    ENQUIRIES: '/learn/enquiries',
+    ENQUIRY_NEW: '/learn/enquiries/new',
   } as const;
