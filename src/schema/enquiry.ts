@@ -6,11 +6,13 @@ export const enquiryFormSchema = z.object({
     .min(1, 'Title is required')
     .max(200, 'Title is too long')
     .trim(),
-  message: z
+  description: z
     .string()
-    .min(10, 'Message must be at least 10 characters')
-    .max(5000, 'Message is too long')
+    .min(10, 'Description must be at least 10 characters')
+    .max(5000, 'Description is too long')
     .trim(),
+  topic: z.enum(['subject', 'document', 'report', 'other']),
+  is_private: z.boolean().default(false),
 });
 
 export type EnquiryFormValues = z.infer<typeof enquiryFormSchema>;

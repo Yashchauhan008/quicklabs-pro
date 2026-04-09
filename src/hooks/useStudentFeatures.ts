@@ -13,6 +13,7 @@ import {
   ratePeerStudent,
   unpinPeer,
   uploadStudentProfilePicture,
+  voteEnquiry,
 } from '@/services/api/students';
 import type { CreateEnquiryData, EnquiryListParams } from '@/types/student';
 import type { SocialProfile } from '@/types/student';
@@ -188,12 +189,25 @@ export function useCreateEnquiry() {
 }
 
 export function useListEnquiries(params?: EnquiryListParams) {
-  const { user, isLoggedIn, isLoadingUser } = useAuth();
-  const enabled =
-    isLoggedIn && !isLoadingUser && isStudentRole(user?.role ?? null);
+  const { isLoggedIn, isLoadingUser } = useAuth();
+  const enabled = isLoggedIn && !isLoadingUser;
   return useQuery({
     queryKey: enquiryKeys.list(params ?? {}),
     queryFn: () => listEnquiries(params),
     enabled,
+  });
+}
+
+export function useVoteEnquiry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ enquiryId, vote }: { enquiryId: string; vote: 'up' | 'down' }) =>
+      voteEnquiry(enquiryId, { vote }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: enquiryKeys.lists() });
+    },
+    onError: (err: unknown) => {
+      toast.error(getApiErrorMessage(err) || 'Could not register vote');
+    },
   });
 }

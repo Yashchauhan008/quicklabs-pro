@@ -28,6 +28,7 @@ const segmentLabel: Record<string, string> = {
   enquiries: 'Get help',
   new: 'New enquiry',
   help: 'Get help',
+  'super-desk': 'Super Desk',
 };
 
 type Crumb = { path: string; label: string };

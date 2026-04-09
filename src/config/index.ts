@@ -59,4 +59,5 @@ export const googleConfig = {
     PEER_PROFILE: '/learn/peers/:peerId',
     ENQUIRIES: '/learn/enquiries',
     ENQUIRY_NEW: '/learn/enquiries/new',
+    SUPER_DESK: '/learn/super-desk',
   } as const;

@@ -20,6 +20,7 @@ import { SubjectFormPage } from '@/pages/admin/SubjectFormPage';
 import { SubjectDetailPage } from '@/pages/admin/SubjectDetailPage';
 import { DocumentUploadPage } from '@/pages/admin/DocumentUploadPage';
 import { DocumentDetailPage } from '@/pages/admin/DocumentDetailPage';
+import { SuperDeskPage } from '@/pages/admin/SuperDeskPage';
 import { PeerLookupPage } from '@/pages/learn/PeerLookupPage';
 import { PeerProfilePage } from '@/pages/learn/PeerProfilePage';
 import { EnquiriesPage } from '@/pages/learn/EnquiriesPage';
@@ -88,6 +89,7 @@ function App() {
               />
               <Route path="enquiries/new" element={<EnquiryCreatePage />} />
               <Route path="enquiries" element={<EnquiriesPage />} />
+              <Route path="super-desk" element={<SuperDeskPage />} />
               <Route path="peers/:peerId" element={<PeerProfilePage />} />
               <Route path="peers" element={<PeerLookupPage />} />
               <Route path="profile" element={<Profile />} />

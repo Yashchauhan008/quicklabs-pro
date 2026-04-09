@@ -16,6 +16,7 @@ import {
   CircleHelp,
   Globe2,
   LayoutGrid,
+  Crown,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { ROUTES } from '@/config';
@@ -28,6 +29,7 @@ type NavItem = {
   href: string;
   icon: typeof LayoutDashboard;
   isActive: (pathname: string) => boolean;
+  isPremium?: boolean;
 };
 
 const learnNav: NavItem[] = [
@@ -49,6 +51,13 @@ const learnNav: NavItem[] = [
     href: ROUTES.EXPLORE_MATERIALS,
     icon: LayoutGrid,
     isActive: (p) => p === ROUTES.EXPLORE_MATERIALS,
+  },
+  {
+    name: 'Super Desk',
+    href: ROUTES.SUPER_DESK,
+    icon: Crown,
+    isActive: (p) => p === ROUTES.SUPER_DESK,
+    isPremium: true,
   },
 ];
 
@@ -117,7 +126,9 @@ export const Sidebar = () => {
           'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
           active
             ? 'bg-primary text-primary-foreground shadow-sm'
-            : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+            : item.isPremium
+              ? 'bg-linear-to-r from-violet-500/10 to-blue-500/10 text-foreground ring-1 ring-violet-300/60 hover:from-violet-500/20 hover:to-blue-500/20'
+              : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
         )}
       >
         <item.icon className="h-5 w-5 shrink-0 opacity-90" />
@@ -128,7 +139,7 @@ export const Sidebar = () => {
 
   return (
     <aside className="w-full shrink-0 border-b border-border/60 bg-card/80 p-3 backdrop-blur-sm md:flex md:h-full md:min-h-0 md:w-[280px] md:border-b-0 md:border-r md:bg-transparent md:p-4 md:backdrop-blur-0">
-      <div className="mx-auto flex min-h-0 w-full max-w-md flex-col rounded-2xl border bg-card shadow-md ring-1 ring-black/[0.04] dark:ring-white/[0.06] md:mx-0 md:h-full md:max-w-none">
+      <div className="mx-auto flex min-h-0 w-full max-w-md flex-col rounded-2xl border bg-card shadow-md ring-1 ring-black/4 dark:ring-white/6 md:mx-0 md:h-full md:max-w-none">
         <div className="shrink-0 p-5 pb-4">
           <Link
             to={ROUTES.DASHBOARD}

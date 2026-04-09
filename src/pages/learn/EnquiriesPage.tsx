@@ -1,13 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/config';
-import { useListEnquiries } from '@/hooks/useStudentFeatures';
-import { useAuth } from '@/context/AuthContext';
-import { isStudentRole } from '@/utils/roles';
+import { useListEnquiries, useVoteEnquiry } from '@/hooks/useStudentFeatures';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -21,48 +18,46 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { EnquiryStatus } from '@/types/student';
+import type { EnquirySort, EnquiryStatus } from '@/types/student';
 import { formatDateTime } from '@/utils/formate';
 import { Plus } from 'lucide-react';
 
 export const EnquiriesPage = () => {
-  const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<'all' | EnquiryStatus>('all');
+  const [sort, setSort] = useState<EnquirySort>('recent');
+  const voteMutation = useVoteEnquiry();
 
   const params = useMemo(
     () => ({
       page,
       limit: 10,
       status: status === 'all' ? undefined : status,
+      sort,
     }),
-    [page, status],
+    [page, sort, status],
   );
 
   const { data, isLoading, isFetching } = useListEnquiries(params);
   const items = data?.items ?? [];
   const meta = data?.meta;
-  const isStudent = isStudentRole(user?.role);
 
-  if (!isStudent) {
-    return (
-      <div className="mx-auto max-w-lg">
-        <Card className="border-0 shadow-md">
-          <CardHeader>
-            <CardTitle>Get help</CardTitle>
-            <CardDescription>
-              Enquiries are available to student accounts.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
+  const statusChip = (s: EnquiryStatus) => {
+    if (s === 'open') return { label: '🟢 Open', className: 'bg-muted text-foreground' };
+    if (s === 'in_progress') {
+      return { label: '🛠️ In progress', className: 'bg-muted text-foreground' };
+    }
+    if (s === 'resolved') {
+      return { label: '✅ Resolved', className: 'bg-muted text-foreground' };
+    }
+    return { label: '📦 Closed', className: 'bg-muted text-foreground' };
+  };
 
-  const statusVariant = (s: EnquiryStatus) => {
-    if (s === 'resolved' || s === 'closed') return 'secondary';
-    if (s === 'in_progress') return 'default';
-    return 'outline';
+  const topicChip = (topic: string) => {
+    if (topic === 'subject') return '📘 Subject';
+    if (topic === 'document') return '📄 Document';
+    if (topic === 'report') return '🚩 Report';
+    return '🧩 Other';
   };
 
   return (
@@ -74,7 +69,7 @@ export const EnquiriesPage = () => {
           </Button>
           <h1 className="text-3xl font-bold tracking-tight">Get help</h1>
           <p className="mt-1 text-muted-foreground">
-            Questions for instructors or support—only you can see your requests.
+            Browse recent and priority enquiries from all users.
           </p>
         </div>
         <Button asChild className="rounded-lg shrink-0">
@@ -85,29 +80,49 @@ export const EnquiriesPage = () => {
         </Button>
       </div>
 
-      <Card className="border-0 shadow-md ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
+      <Card className="border-0 shadow-md ring-1 ring-black/4 dark:ring-white/6">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-lg">Your enquiries</CardTitle>
-          <div className="w-full space-y-2 sm:w-48">
-            <label className="text-sm font-medium">Status</label>
-            <Select
-              value={status}
-              onValueChange={(v) => {
-                setStatus(v as 'all' | EnquiryStatus);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="rounded-lg">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="in_progress">In progress</SelectItem>
-                <SelectItem value="resolved">Resolved</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-              </SelectContent>
-            </Select>
+          <CardTitle className="text-lg">All enquiries</CardTitle>
+          <div className="grid w-full grid-cols-1 gap-2 sm:w-[380px] sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select
+                value={status}
+                onValueChange={(v) => {
+                  setStatus(v as 'all' | EnquiryStatus);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-lg">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="in_progress">In progress</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Sort</label>
+              <Select
+                value={sort}
+                onValueChange={(v) => {
+                  setSort(v as EnquirySort);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-lg">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Recent</SelectItem>
+                  <SelectItem value="priority">Priority (votes)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -131,13 +146,53 @@ export const EnquiriesPage = () => {
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <p className="font-semibold">{e.title}</p>
-                      <Badge variant={statusVariant(e.status)}>{e.status}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="border-transparent bg-muted text-foreground"
+                        >
+                          {topicChip(e.topic)}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={`border-transparent ${statusChip(e.status).className}`}
+                        >
+                          {statusChip(e.status).label}
+                        </Badge>
+                      </div>
                     </div>
-                    {e.message && (
+                    {e.description && (
                       <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
-                        {e.message}
+                        {e.description}
                       </p>
                     )}
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <span className="text-xs text-muted-foreground">
+                        Score: {e.score ?? 0}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant={e.my_vote === 1 ? 'secondary' : 'outline'}
+                          disabled={e.my_vote === 1 || voteMutation.isPending}
+                          onClick={() =>
+                            voteMutation.mutate({ enquiryId: e.id, vote: 'up' })
+                          }
+                        >
+                          👍 {e.upvotes ?? 0}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={e.my_vote === -1 ? 'secondary' : 'outline'}
+                          disabled={e.my_vote === -1 || voteMutation.isPending}
+                          onClick={() =>
+                            voteMutation.mutate({ enquiryId: e.id, vote: 'down' })
+                          }
+                        >
+                          👎 {e.downvotes ?? 0}
+                        </Button>
+                      </div>
+                    </div>
                     {e.created_at && (
                       <p className="mt-2 text-xs text-muted-foreground">
                         {formatDateTime(e.created_at)}

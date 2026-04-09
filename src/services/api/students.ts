@@ -6,6 +6,7 @@ import type {
   EnquiryListParams,
   PeerProfile,
   SocialProfile,
+  VoteEnquiryData,
 } from '@/types/student';
 import { parseEntity, parsePaginatedList } from '@/utils/parseApiResponse';
 
@@ -107,4 +108,12 @@ export async function listEnquiries(params?: EnquiryListParams) {
     params: { ...params, page, limit },
   });
   return parsePaginatedList<Enquiry>(body, { page, limit });
+}
+
+export function voteEnquiry(enquiryId: string, data: VoteEnquiryData) {
+  return axiosInstance({
+    method: 'POST',
+    url: `${BASE}/enquiries/${enquiryId}/votes`,
+    data,
+  });
 }
