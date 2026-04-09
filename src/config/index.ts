@@ -1,6 +1,10 @@
 export const serverDetails = {
-    serverProxyURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001',
-  };
+  serverProxyURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001',
+};
+
+export const googleConfig = {
+  clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+};
   
   export const PERMISSIONS_CONFIG = {
     // Dashboard

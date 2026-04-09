@@ -1,7 +1,7 @@
 export const APP_NAME = 'LMS - Learning Management System';
 export const APP_VERSION = '1.0.0';
 export const DEFAULT_PAGE_SIZE = 10;
-export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+export const MAX_FILE_SIZE = 75 * 1024 * 1024; // 75MB
 
 export const DOCUMENT_VISIBILITY = {
   PUBLIC: 'PUBLIC',

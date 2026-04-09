@@ -4,10 +4,15 @@ import type { DocumentPreviewMode } from '@/utils/documentPreview';
 
 export type DocumentPreviewState =
   | { status: 'idle' }
-  | { status: 'loading' }
+  | {
+      status: 'loading';
+      stage: 'downloading' | 'processing';
+      progressPercent?: number;
+    }
   | { status: 'error'; message?: string }
   | { status: 'ready'; blobUrl: string; mode: 'pdf' | 'image' }
-  | { status: 'ready'; html: string; mode: 'docx' };
+  | { status: 'ready'; html: string; mode: 'docx' }
+  | { status: 'ready'; arrayBuffer: ArrayBuffer; mode: 'pptx' };
 
 export type DocumentPreviewOptions = {
   /** From GET document (`file_mime_type` / `mime_type`) — used when download response omits a useful type */
@@ -66,7 +71,9 @@ export function useDocumentPreview(
   const mimeHint = options?.mimeHint ?? undefined;
 
   const [state, setState] = useState<DocumentPreviewState>(() =>
-    mode === 'none' ? { status: 'idle' } : { status: 'loading' },
+    mode === 'none'
+      ? { status: 'idle' }
+      : { status: 'loading', stage: 'downloading', progressPercent: 0 },
   );
   const blobUrlRef = useRef<string | null>(null);
 
@@ -82,12 +89,25 @@ export function useDocumentPreview(
     }
 
     let cancelled = false;
-    setState({ status: 'loading' });
+    setState({ status: 'loading', stage: 'downloading', progressPercent: 0 });
 
     (async () => {
       try {
-        const { blob, contentType } = await downloadDocumentFile(documentId);
+        const { blob, contentType } = await downloadDocumentFile(documentId, {
+          onProgress: ({ percent }) => {
+            if (cancelled) return;
+            setState((prev) => {
+              if (prev.status !== 'loading') return prev;
+              return {
+                status: 'loading',
+                stage: 'downloading',
+                progressPercent: percent ?? prev.progressPercent,
+              };
+            });
+          },
+        });
         if (cancelled) return;
+        setState({ status: 'loading', stage: 'processing', progressPercent: 100 });
 
         if (mode === 'pdf') {
           const ab = await blob.arrayBuffer();
@@ -126,6 +146,17 @@ export function useDocumentPreview(
             status: 'ready',
             html: result.value,
             mode: 'docx',
+          });
+          return;
+        }
+
+        if (mode === 'pptx') {
+          const ab = await blob.arrayBuffer();
+          if (cancelled) return;
+          setState({
+            status: 'ready',
+            arrayBuffer: ab,
+            mode: 'pptx',
           });
         }
       } catch (e: unknown) {

@@ -15,7 +15,6 @@ import { Profile } from '@/components/admin/Profile';
 import { Settings } from '@/components/admin/Settings';
 import { Unauthorized } from '@/components/admin/Unauthorized';
 import { ROUTES } from '@/config';
-import { Register } from './pages/Register';
 import { SubjectsPage } from '@/pages/admin/SubjectsPage';
 import { SubjectFormPage } from '@/pages/admin/SubjectFormPage';
 import { SubjectDetailPage } from '@/pages/admin/SubjectDetailPage';
@@ -62,7 +61,7 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/register" element={<Navigate to={ROUTES.LOGIN} replace />} />
 
             <Route
               path="/learn"

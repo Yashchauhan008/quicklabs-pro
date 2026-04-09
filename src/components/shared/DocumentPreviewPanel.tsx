@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import type { DocumentPreviewState } from '@/hooks/useDocumentPreview';
 import type { DocumentPreviewMode } from '@/utils/documentPreview';
 import { PdfCanvasPreview } from '@/components/shared/PdfCanvasPreview';
+import { PptxPreview } from '@/components/shared/PptxPreview';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -34,10 +35,27 @@ export function DocumentPreviewPanel({
   }
 
   if (state.status === 'loading' || state.status === 'idle') {
+    const progress = state.status === 'loading' ? state.progressPercent : undefined;
+    const width = Math.max(6, Math.min(100, progress ?? 12));
+    const label =
+      state.status === 'loading' && state.stage === 'processing'
+        ? 'Preparing preview...'
+        : 'Downloading preview...';
     return (
-      <div className="flex min-h-[240px] flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+      <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 px-6 text-sm text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin text-primary/80" />
-        <p>Loading preview…</p>
+        <div className="w-full max-w-sm space-y-2">
+          <p className="text-center">{label}</p>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
+              style={{ width: `${width}%` }}
+            />
+          </div>
+          <p className="text-center text-xs text-muted-foreground/90">
+            {state.status === 'loading' && progress != null ? `${progress}%` : 'Starting...'}
+          </p>
+        </div>
       </div>
     );
   }
@@ -105,6 +123,10 @@ export function DocumentPreviewPanel({
         </p>
       </div>
     );
+  }
+
+  if (state.status === 'ready' && state.mode === 'pptx') {
+    return <PptxPreview arrayBuffer={state.arrayBuffer} />;
   }
 
   return null;

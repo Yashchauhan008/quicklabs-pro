@@ -114,7 +114,7 @@ export const DocumentUploadPage = () => {
         </Button>
         <h1 className="text-3xl font-bold tracking-tight">Upload a file</h1>
         <p className="mt-1 text-muted-foreground">
-          PDFs, Office files, images, text, or CSV — up to 50MB each.
+          PDFs, Office files, images, text, or CSV — up to 75MB each.
         </p>
         {studentUploadNote && (
           <p className="mt-2 text-sm text-muted-foreground">

@@ -54,6 +54,9 @@ export function deleteDocument(id: string, options?: { permanent?: boolean }) {
  */
 export async function downloadDocumentFile(
   id: string,
+  options?: {
+    onProgress?: (progress: { loaded: number; total?: number; percent?: number }) => void;
+  },
 ): Promise<{
   blob: Blob;
   filename: string | null;
@@ -68,6 +71,16 @@ export async function downloadDocumentFile(
       {
         responseType: 'blob',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        onDownloadProgress: (event) => {
+          if (!options?.onProgress) return;
+          const loaded = event.loaded ?? 0;
+          const total = event.total ?? undefined;
+          const percent =
+            total && total > 0
+              ? Math.min(100, Math.round((loaded / total) * 100))
+              : undefined;
+          options.onProgress({ loaded, total, percent });
+        },
       },
     );
   } catch (e) {

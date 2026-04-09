@@ -1,6 +1,6 @@
 import type { SubjectDocument } from '@/types/document';
 
-export type DocumentPreviewMode = 'pdf' | 'image' | 'docx' | 'none';
+export type DocumentPreviewMode = 'pdf' | 'image' | 'docx' | 'pptx' | 'none';
 
 /** Prefer API `file_mime_type`, then `mime_type`. */
 export function getDocumentMime(doc: SubjectDocument): string {
@@ -22,6 +22,13 @@ export function getDocumentPreviewMode(doc: SubjectDocument): DocumentPreviewMod
     name.endsWith('.docx')
   ) {
     return 'docx';
+  }
+  if (
+    mime ===
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+    name.endsWith('.pptx')
+  ) {
+    return 'pptx';
   }
   return 'none';
 }
