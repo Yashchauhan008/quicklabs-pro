@@ -153,6 +153,9 @@ export const ExploreMaterialsPage = () => {
                         </p>
                       ) : null}
                       <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-muted-foreground">
+                        {d.file_count != null && d.file_count > 1 ? (
+                          <span>{d.file_count} files</span>
+                        ) : null}
                         {d.file_size != null ? (
                           <span>{formatFileSize(d.file_size)}</span>
                         ) : null}

@@ -3,11 +3,15 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import { getApiErrorMessage } from '@/utils/apiError';
 import {
+  addDocumentAttachments,
   deleteDocument,
+  deleteDocumentAttachment,
   downloadDocumentFile,
   getDocumentById,
   getDocuments,
+  patchDocumentAttachment,
   updateDocument,
+  type UpdateDocumentBody,
   uploadDocument,
 } from '@/services/api/document';
 import type { DocumentListParams } from '@/types/document';
@@ -60,14 +64,66 @@ export function useUploadDocument() {
 export function useUpdateDocument(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (formData: FormData) => updateDocument(id, formData),
+    mutationFn: (body: UpdateDocumentBody) => updateDocument(id, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: documentKeys.lists() });
       queryClient.invalidateQueries({ queryKey: documentKeys.detail(id) });
-      toast.success('File updated');
+      toast.success('Saved');
     },
     onError: (err: { message?: string }) => {
       toast.error(err?.message || 'Update failed');
+    },
+  });
+}
+
+export function useAddDocumentAttachments(documentId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (formData: FormData) => addDocumentAttachments(documentId, formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: documentKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: documentKeys.detail(documentId) });
+      toast.success('Files added');
+    },
+    onError: (err: { message?: string }) => {
+      toast.error(err?.message || 'Upload failed');
+    },
+  });
+}
+
+export function usePatchDocumentAttachment(documentId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      attachmentId,
+      body,
+    }: {
+      attachmentId: string;
+      body: { title?: string; description?: string; is_main?: boolean };
+    }) => patchDocumentAttachment(documentId, attachmentId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: documentKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: documentKeys.detail(documentId) });
+      toast.success('Updated');
+    },
+    onError: (err: { message?: string }) => {
+      toast.error(err?.message || 'Update failed');
+    },
+  });
+}
+
+export function useDeleteDocumentAttachment(documentId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (attachmentId: string) =>
+      deleteDocumentAttachment(documentId, attachmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: documentKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: documentKeys.detail(documentId) });
+      toast.success('File removed');
+    },
+    onError: (err: { message?: string }) => {
+      toast.error(err?.message || 'Remove failed');
     },
   });
 }
@@ -97,7 +153,10 @@ export function useDownloadDocument() {
       fallbackName?: string;
     }) => {
       const { blob, filename } = await downloadDocumentFile(id);
-      const name = filename || fallbackName || `document-${id}`;
+      let name = filename || fallbackName || `document-${id}.zip`;
+      if (name && !name.toLowerCase().endsWith('.zip')) {
+        name = `${name.replace(/\.[^/.]+$/, '')}.zip`;
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

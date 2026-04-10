@@ -23,4 +23,16 @@ export const ALLOWED_DOCUMENT_TYPES = [
   'png',
   'webp',
   'gif',
-];
+] as const;
+
+/** For `<input type="file" accept={...}>` — includes extensions and PNG/JPEG mimes for pickers that omit extensions. */
+export const DOCUMENT_FILE_ACCEPT = [
+  ...ALLOWED_DOCUMENT_TYPES.map((t) => `.${t}`),
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+  'text/plain',
+  'text/csv',
+].join(',');

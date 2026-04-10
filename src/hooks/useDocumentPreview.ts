@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { downloadDocumentFile } from '@/services/api/document';
+import { downloadDocumentAttachment } from '@/services/api/document';
 import type { DocumentPreviewMode } from '@/utils/documentPreview';
 
 export type DocumentPreviewState =
@@ -15,8 +15,12 @@ export type DocumentPreviewState =
   | { status: 'ready'; arrayBuffer: ArrayBuffer; mode: 'pptx' };
 
 export type DocumentPreviewOptions = {
-  /** From GET document (`file_mime_type` / `mime_type`) — used when download response omits a useful type */
+  /** From GET document / attachment (`file_mime_type`) — used when download response omits a useful type */
   mimeHint?: string | null;
+  /**
+   * When set, fetches one attachment (preview quota). When omitted, fetches full document download (ZIP path — avoid for preview).
+   */
+  attachmentId?: string;
 };
 
 function isPdfBuffer(buffer: ArrayBuffer): boolean {
@@ -61,7 +65,7 @@ function normalizeImageMime(
 
 /**
  * Authenticated download → Blob with a browser-useful MIME so iframe/img can render.
- * `res.download()` + octet-stream is fine; we re-type from bytes + document metadata.
+ * Use `attachmentId` to preview a single file; omit only for legacy single-file flows.
  */
 export function useDocumentPreview(
   documentId: string | undefined,
@@ -69,6 +73,7 @@ export function useDocumentPreview(
   options?: DocumentPreviewOptions,
 ): DocumentPreviewState {
   const mimeHint = options?.mimeHint ?? undefined;
+  const attachmentId = options?.attachmentId;
 
   const [state, setState] = useState<DocumentPreviewState>(() =>
     mode === 'none'
@@ -88,24 +93,35 @@ export function useDocumentPreview(
       return;
     }
 
+    if (!attachmentId) {
+      setState({
+        status: 'error',
+        message: 'Select a file tab to preview.',
+      });
+      return;
+    }
+
     let cancelled = false;
     setState({ status: 'loading', stage: 'downloading', progressPercent: 0 });
 
     (async () => {
       try {
-        const { blob, contentType } = await downloadDocumentFile(documentId, {
-          onProgress: ({ percent }) => {
-            if (cancelled) return;
-            setState((prev) => {
-              if (prev.status !== 'loading') return prev;
-              return {
-                status: 'loading',
-                stage: 'downloading',
-                progressPercent: percent ?? prev.progressPercent,
-              };
-            });
-          },
-        });
+        const fetchBlob = () =>
+          downloadDocumentAttachment(documentId, attachmentId, {
+            onProgress: ({ percent }) => {
+              if (cancelled) return;
+              setState((prev) => {
+                if (prev.status !== 'loading') return prev;
+                return {
+                  status: 'loading',
+                  stage: 'downloading',
+                  progressPercent: percent ?? prev.progressPercent,
+                };
+              });
+            },
+          });
+
+        const { blob, contentType } = await fetchBlob();
         if (cancelled) return;
         setState({ status: 'loading', stage: 'processing', progressPercent: 100 });
 
@@ -177,7 +193,7 @@ export function useDocumentPreview(
         blobUrlRef.current = null;
       }
     };
-  }, [documentId, mode, mimeHint]);
+  }, [documentId, attachmentId, mode, mimeHint]);
 
   return state;
 }

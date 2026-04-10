@@ -33,11 +33,47 @@ export function uploadDocument(formData: FormData) {
   });
 }
 
-export function updateDocument(id: string, formData: FormData) {
+export type UpdateDocumentBody = {
+  title: string;
+  description?: string;
+  visibility: string;
+  kind: string;
+};
+
+export function updateDocument(id: string, body: UpdateDocumentBody) {
   return axiosInstance({
     method: 'PUT',
     url: scopedApiUrl(`/documents/${id}`),
+    data: body,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export function addDocumentAttachments(id: string, formData: FormData) {
+  return axiosInstance({
+    method: 'POST',
+    url: scopedApiUrl(`/documents/${id}/attachments`),
     data: formData,
+  });
+}
+
+export function patchDocumentAttachment(
+  documentId: string,
+  attachmentId: string,
+  body: { title?: string; description?: string; is_main?: boolean },
+) {
+  return axiosInstance({
+    method: 'PATCH',
+    url: scopedApiUrl(`/documents/${documentId}/attachments/${attachmentId}`),
+    data: body,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export function deleteDocumentAttachment(documentId: string, attachmentId: string) {
+  return axiosInstance({
+    method: 'DELETE',
+    url: scopedApiUrl(`/documents/${documentId}/attachments/${attachmentId}`),
   });
 }
 
@@ -50,7 +86,7 @@ export function deleteDocument(id: string, options?: { permanent?: boolean }) {
 }
 
 /**
- * Download uses a raw axios call so we can read `Content-Disposition` for the filename.
+ * Download full document as ZIP (`Content-Disposition` may include `.zip` name).
  */
 export async function downloadDocumentFile(
   id: string,
@@ -60,7 +96,7 @@ export async function downloadDocumentFile(
 ): Promise<{
   blob: Blob;
   filename: string | null;
-  /** Response `Content-Type` (no params); often `application/octet-stream` for downloads */
+  /** Response `Content-Type` (no params); often `application/zip` */
   contentType: string | null;
 }> {
   const token = Cookies.get('token');
@@ -83,6 +119,86 @@ export async function downloadDocumentFile(
         },
       },
     );
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response?.status === 401) {
+      Cookies.remove('user', { path: '/' });
+      Cookies.remove('token', { path: '/' });
+      clearApiScopeCookie();
+      window.location.href = '/login';
+    }
+    if (axios.isAxiosError(e) && e.response?.status === 429) {
+      let msg =
+        'Daily download limit reached. Try again after midnight UTC.';
+      const data = e.response.data;
+      if (data instanceof Blob) {
+        try {
+          const text = await data.text();
+          const j = JSON.parse(text) as { message?: string };
+          if (j?.message) msg = j.message;
+        } catch {
+          /* keep default */
+        }
+      } else if (data && typeof data === 'object' && 'message' in data) {
+        const m = (data as { message?: string }).message;
+        if (typeof m === 'string' && m) msg = m;
+      }
+      throw { message: msg, code: 'too_many_requests' };
+    }
+    throw e;
+  }
+
+  const disposition = res.headers['content-disposition'] as string | undefined;
+  let filename: string | null = null;
+  if (disposition) {
+    const match = /filename\*?=(?:UTF-8'')?["']?([^"';]+)["']?/i.exec(disposition);
+    if (match?.[1]) {
+      try {
+        filename = decodeURIComponent(match[1].trim());
+      } catch {
+        filename = match[1].trim();
+      }
+    }
+  }
+
+  const rawCt = res.headers['content-type'];
+  const contentType =
+    typeof rawCt === 'string' ? rawCt.split(';')[0].trim() : null;
+
+  return { blob: res.data as Blob, filename, contentType };
+}
+
+/**
+ * Stream one attachment for in-browser preview (counts toward student download quota).
+ */
+export async function downloadDocumentAttachment(
+  documentId: string,
+  attachmentId: string,
+  options?: {
+    onProgress?: (progress: { loaded: number; total?: number; percent?: number }) => void;
+  },
+): Promise<{
+  blob: Blob;
+  filename: string | null;
+  contentType: string | null;
+}> {
+  const token = Cookies.get('token');
+  let res;
+  const url = `${serverDetails.serverProxyURL}${scopedApiUrl(`/documents/${documentId}/attachments/${attachmentId}/download`)}`;
+  try {
+    res = await axios.get(url, {
+      responseType: 'blob',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      onDownloadProgress: (event) => {
+        if (!options?.onProgress) return;
+        const loaded = event.loaded ?? 0;
+        const total = event.total ?? undefined;
+        const percent =
+          total && total > 0
+            ? Math.min(100, Math.round((loaded / total) * 100))
+            : undefined;
+        options.onProgress({ loaded, total, percent });
+      },
+    });
   } catch (e) {
     if (axios.isAxiosError(e) && e.response?.status === 401) {
       Cookies.remove('user', { path: '/' });

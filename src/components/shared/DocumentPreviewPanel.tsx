@@ -69,33 +69,37 @@ export function DocumentPreviewPanel({
   }
 
   if (state.status === 'ready' && state.mode === 'pdf') {
-    return <PdfCanvasPreview blobUrl={state.blobUrl} />;
+    return (
+      <div className="min-h-0 w-full min-w-0">
+        <PdfCanvasPreview blobUrl={state.blobUrl} />
+      </div>
+    );
   }
 
   if (state.status === 'ready' && state.mode === 'image') {
     return (
       <div
-        className="flex max-h-[min(75vh,820px)] flex-col bg-gradient-to-b from-muted/30 to-muted/10"
+        className="flex w-full min-w-0 max-h-[min(88vh,920px)] flex-col overflow-hidden bg-gradient-to-b from-muted/30 to-muted/10"
         onContextMenu={blockPreviewExfiltration}
       >
-        <div className="flex max-h-[min(70vh,760px)] justify-center overflow-auto overscroll-contain px-4 py-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
           <div
             className={cn(
-              'inline-block rounded-xl border border-border/50 bg-background p-2 shadow-md',
+              'mx-auto w-full max-w-full rounded-xl border border-border/50 bg-background p-1.5 shadow-md sm:p-2',
               'ring-1 ring-black/5 dark:ring-white/10',
             )}
           >
             <img
               src={state.blobUrl}
               alt={documentTitle ? `Preview: ${documentTitle}` : 'Image preview'}
-              className="max-h-[min(65vh,700px)] max-w-full object-contain select-none"
+              className="mx-auto block h-auto w-full max-w-full object-contain select-none"
               draggable={false}
               onContextMenu={blockPreviewExfiltration}
               onDragStart={blockPreviewExfiltration}
             />
           </div>
         </div>
-        <p className="border-t border-border/40 px-4 py-2.5 text-center text-[11px] text-muted-foreground">
+        <p className="shrink-0 border-t border-border/40 px-4 py-2.5 text-center text-[11px] text-muted-foreground sm:px-6">
           Preview only — use <span className="font-medium text-foreground/80">Download</span> to save a copy.
         </p>
       </div>
@@ -105,20 +109,20 @@ export function DocumentPreviewPanel({
   if (state.status === 'ready' && state.mode === 'docx') {
     return (
       <div
-        className="flex max-h-[75vh] flex-col bg-gradient-to-b from-muted/25 to-muted/10"
+        className="flex w-full min-w-0 max-h-[min(88vh,920px)] flex-col overflow-hidden bg-gradient-to-b from-muted/25 to-muted/10"
         onContextMenu={blockPreviewExfiltration}
       >
         <div
           className={cn(
-            'document-preview-docx max-h-[min(68vh,720px)] overflow-auto px-5 py-5 text-sm leading-relaxed',
-            'select-text rounded-b-none border-x border-t-0 border-border/40 bg-card/50',
+            'document-preview-docx min-h-0 flex-1 overflow-y-auto px-4 py-4 text-sm leading-relaxed sm:px-6 sm:py-5',
+            'select-text border-x border-t-0 border-border/40 bg-card/50',
             '[&_p]:mb-2 [&_table]:mb-4 [&_table]:w-full [&_table]:border-collapse',
             '[&_td]:border [&_td]:border-border/60 [&_td]:p-1.5',
             '[&_th]:border [&_th]:border-border/60 [&_th]:p-1.5',
           )}
           dangerouslySetInnerHTML={{ __html: state.html }}
         />
-        <p className="border-t border-border/40 px-4 py-2.5 text-center text-[11px] text-muted-foreground">
+        <p className="shrink-0 border-t border-border/40 px-4 py-2.5 text-center text-[11px] text-muted-foreground sm:px-6">
           Preview only — use <span className="font-medium text-foreground/80">Download</span> to save a copy.
         </p>
       </div>
@@ -126,7 +130,11 @@ export function DocumentPreviewPanel({
   }
 
   if (state.status === 'ready' && state.mode === 'pptx') {
-    return <PptxPreview arrayBuffer={state.arrayBuffer} />;
+    return (
+      <div className="w-full min-w-0">
+        <PptxPreview arrayBuffer={state.arrayBuffer} />
+      </div>
+    );
   }
 
   return null;

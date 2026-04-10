@@ -60,15 +60,15 @@ export function PptxPreview({ arrayBuffer }: Props) {
   }
 
   return (
-    <div className="relative max-h-[75vh] overflow-auto bg-muted/20">
+    <div className="relative flex max-h-[min(88vh,920px)] flex-col overflow-hidden rounded-b-xl bg-muted/10">
       {isRendering ? (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/70 backdrop-blur-[1px]">
           <Loader2 className="h-7 w-7 animate-spin text-primary/80" />
           <p className="text-sm text-muted-foreground">Rendering slides...</p>
         </div>
       ) : null}
-      <div ref={containerRef} className="pptx-preview-host min-h-[240px] p-3 sm:p-4" />
-      <p className="border-t border-border/40 px-4 py-2.5 text-center text-[11px] text-muted-foreground">
+      <div ref={containerRef} className="pptx-preview-host min-h-0 flex-1 overflow-auto p-4 sm:p-6" />
+      <p className="shrink-0 border-t border-border/40 px-4 py-2.5 text-center text-[11px] text-muted-foreground sm:px-6">
         Slide preview only — use <span className="font-medium text-foreground/80">Download</span> for full file.
       </p>
     </div>

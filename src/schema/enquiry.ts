@@ -12,7 +12,7 @@ export const enquiryFormSchema = z.object({
     .max(5000, 'Description is too long')
     .trim(),
   topic: z.enum(['subject', 'document', 'report', 'other']),
-  is_private: z.boolean().default(false),
+  is_private: z.boolean(),
 });
 
 export type EnquiryFormValues = z.infer<typeof enquiryFormSchema>;

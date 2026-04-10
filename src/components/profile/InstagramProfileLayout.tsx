@@ -290,6 +290,11 @@ export function InstagramProfileLayout({
                         {DOCUMENT_KIND_LABELS[d.kind]}
                       </Badge>
                     ) : null}
+                    {d.file_count != null && d.file_count > 1 ? (
+                      <span className="mt-1 text-[10px] text-muted-foreground">
+                        {d.file_count} files
+                      </span>
+                    ) : null}
                     {d.file_size != null ? (
                       <span className="mt-1 text-[10px] text-muted-foreground">
                         {formatFileSize(d.file_size)}
