@@ -1,0 +1,7 @@
+services:
+  quicklabs-frontend:
+    image: yashchauhan008/quicklabs-frontend:latest
+    container_name: quicklabs-frontend
+    pull_policy: always
+    ports:
+      - "5174:80" 
