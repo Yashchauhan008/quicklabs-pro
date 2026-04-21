@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -25,6 +25,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { parseEntity } from '@/utils/parseApiResponse';
 import { useAuth } from '@/context/AuthContext';
 import { isStudentRole } from '@/utils/roles';
+import { resolvePublicFileUrl } from '@/utils/publicFileUrl';
 
 export const SubjectFormPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,8 +34,12 @@ export const SubjectFormPage = () => {
   const { user } = useAuth();
 
   const { data: subject, isLoading } = useGetSubject(isEdit ? id : undefined);
+  const existingBannerSrc = resolvePublicFileUrl(subject?.banner_url);
   const createMutation = useCreateSubject();
   const updateMutation = useUpdateSubject(id ?? '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [clearBanner, setClearBanner] = useState(false);
 
   const form = useForm<SubjectFormValues>({
     resolver: zodResolver(subjectFormSchema),
@@ -50,6 +55,8 @@ export const SubjectFormPage = () => {
         name: subject.name,
         description: subject.description ?? '',
       });
+      setClearBanner(false);
+      setBannerFile(null);
     }
   }, [subject, isEdit, form]);
 
@@ -57,7 +64,10 @@ export const SubjectFormPage = () => {
     if (isEdit && id) {
       await updateMutation.mutateAsync({
         name: values.name,
-        description: values.description?.trim() || undefined,
+        // Send empty string on edit so backend can clear description to NULL.
+        description: values.description?.trim() ?? '',
+        banner: bannerFile ?? undefined,
+        clear_banner: clearBanner && !bannerFile,
       });
       navigate(generatePath(ROUTES.SUBJECT_DETAILS, { id }));
       return;
@@ -65,6 +75,7 @@ export const SubjectFormPage = () => {
     const res = await createMutation.mutateAsync({
       name: values.name,
       description: values.description?.trim() || undefined,
+      banner: bannerFile ?? undefined,
     });
     const created = parseEntity<{ id: string }>(res);
     if (created?.id) {
@@ -134,6 +145,59 @@ export const SubjectFormPage = () => {
               {form.formState.errors.description && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.description.message}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Banner image (optional)</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = '';
+                  if (!file) return;
+                  setBannerFile(file);
+                  setClearBanner(false);
+                }}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {bannerFile ? 'Replace banner' : 'Upload banner'}
+                </Button>
+                {(bannerFile || subject?.banner_url) && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="text-muted-foreground"
+                    onClick={() => {
+                      setBannerFile(null);
+                      if (subject?.banner_url) setClearBanner(true);
+                    }}
+                  >
+                    Remove banner
+                  </Button>
+                )}
+              </div>
+              {bannerFile ? (
+                <p className="text-xs text-muted-foreground">
+                  New file: {bannerFile.name}
+                </p>
+              ) : existingBannerSrc && !clearBanner ? (
+                <img
+                  src={existingBannerSrc}
+                  alt={`${subject.name} banner`}
+                  className="aspect-square w-32 rounded-md border object-cover"
+                />
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  No banner selected.
                 </p>
               )}
             </div>

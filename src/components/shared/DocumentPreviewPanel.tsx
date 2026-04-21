@@ -4,6 +4,7 @@ import type { DocumentPreviewState } from '@/hooks/useDocumentPreview';
 import type { DocumentPreviewMode } from '@/utils/documentPreview';
 import { PdfCanvasPreview } from '@/components/shared/PdfCanvasPreview';
 import { PptxPreview } from '@/components/shared/PptxPreview';
+import { DocxPreview } from '@/components/shared/DocxPreview';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -79,7 +80,7 @@ export function DocumentPreviewPanel({
   if (state.status === 'ready' && state.mode === 'image') {
     return (
       <div
-        className="flex w-full min-w-0 max-h-[min(88vh,920px)] flex-col overflow-hidden bg-gradient-to-b from-muted/30 to-muted/10"
+        className="flex w-full min-w-0 max-h-[min(88vh,920px)] flex-col overflow-hidden bg-linear-to-b from-muted/30 to-muted/10"
         onContextMenu={blockPreviewExfiltration}
       >
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
@@ -107,26 +108,7 @@ export function DocumentPreviewPanel({
   }
 
   if (state.status === 'ready' && state.mode === 'docx') {
-    return (
-      <div
-        className="flex w-full min-w-0 max-h-[min(88vh,920px)] flex-col overflow-hidden bg-gradient-to-b from-muted/25 to-muted/10"
-        onContextMenu={blockPreviewExfiltration}
-      >
-        <div
-          className={cn(
-            'document-preview-docx min-h-0 flex-1 overflow-y-auto px-4 py-4 text-sm leading-relaxed sm:px-6 sm:py-5',
-            'select-text border-x border-t-0 border-border/40 bg-card/50',
-            '[&_p]:mb-2 [&_table]:mb-4 [&_table]:w-full [&_table]:border-collapse',
-            '[&_td]:border [&_td]:border-border/60 [&_td]:p-1.5',
-            '[&_th]:border [&_th]:border-border/60 [&_th]:p-1.5',
-          )}
-          dangerouslySetInnerHTML={{ __html: state.html }}
-        />
-        <p className="shrink-0 border-t border-border/40 px-4 py-2.5 text-center text-[11px] text-muted-foreground sm:px-6">
-          Preview only — use <span className="font-medium text-foreground/80">Download</span> to save a copy.
-        </p>
-      </div>
-    );
+    return <DocxPreview arrayBuffer={state.arrayBuffer} />;
   }
 
   if (state.status === 'ready' && state.mode === 'pptx') {

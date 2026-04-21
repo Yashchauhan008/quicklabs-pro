@@ -28,18 +28,27 @@ export async function getSubjectById(id: string) {
 }
 
 export function createSubject(data: CreateSubjectData) {
+  const formData = new FormData();
+  formData.append('name', data.name);
+  if (data.description) formData.append('description', data.description);
+  if (data.banner) formData.append('banner', data.banner);
   return axiosInstance({
     method: 'POST',
     url: scopedApiUrl('/subjects'),
-    data,
+    data: formData,
   });
 }
 
 export function updateSubject(id: string, data: UpdateSubjectData) {
+  const formData = new FormData();
+  if (data.name !== undefined) formData.append('name', data.name);
+  if (data.description !== undefined) formData.append('description', data.description);
+  if (data.banner) formData.append('banner', data.banner);
+  if (data.clear_banner) formData.append('clear_banner', 'true');
   return axiosInstance({
     method: 'PUT',
     url: scopedApiUrl(`/subjects/${id}`),
-    data,
+    data: formData,
   });
 }
 

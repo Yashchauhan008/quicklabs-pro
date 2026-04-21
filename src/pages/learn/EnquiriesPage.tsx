@@ -83,7 +83,7 @@ export const EnquiriesPage = () => {
       <Card className="border-0 shadow-md ring-1 ring-black/4 dark:ring-white/6">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-lg">All enquiries</CardTitle>
-          <div className="grid w-full grid-cols-1 gap-2 sm:w-[380px] sm:grid-cols-2">
+          <div className="grid w-full grid-cols-1 gap-2 sm:max-w-md sm:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">Status</label>
               <Select
@@ -202,7 +202,7 @@ export const EnquiriesPage = () => {
                 ))}
               </ul>
               {meta && meta.totalPages > 1 && (
-                <div className="flex items-center justify-between border-t pt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
                   <p className="text-sm text-muted-foreground">
                     Page {meta.page} of {meta.totalPages}
                     {isFetching ? ' · …' : ''}

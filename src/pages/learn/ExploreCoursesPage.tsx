@@ -10,6 +10,7 @@ import { truncateText } from '@/utils/formate';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PeerAttributionRow } from '@/components/shared/PeerAttributionRow';
 import { pickSubjectCreator } from '@/utils/displayUser';
+import { resolvePublicFileUrl } from '@/utils/publicFileUrl';
 import { BookOpen, Globe2, Plus } from 'lucide-react';
 
 export const ExploreCoursesPage = () => {
@@ -86,6 +87,7 @@ export const ExploreCoursesPage = () => {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((s) => {
               const creator = pickSubjectCreator(s);
+              const subjectImageSrc = resolvePublicFileUrl(s.banner_url);
               return (
                 <Card
                   key={s.id}
@@ -96,17 +98,32 @@ export const ExploreCoursesPage = () => {
                       to={`${generatePath(ROUTES.SUBJECT_DETAILS, { id: s.id })}?from=explore`}
                       className="group -m-3.5 mb-0 rounded-t-xl p-3.5 pb-0 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <BookOpen className="h-4 w-4" />
+                      <div className="mb-2 flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                          {subjectImageSrc ? (
+                            <img
+                              src={subjectImageSrc}
+                              alt={`${s.name} course`}
+                              className="h-20 w-20 rounded-lg object-cover border border-border/30 shadow-sm"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary border border-border/30 shadow-sm">
+                              <BookOpen className="h-6 w-6" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <h2 className="line-clamp-2 text-base font-semibold leading-snug group-hover:text-primary">
+                            {s.name}
+                          </h2>
+                          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                            {s.description
+                              ? truncateText(s.description, 120)
+                              : 'No description.'}
+                          </p>
+                        </div>
                       </div>
-                      <h2 className="line-clamp-2 text-base font-semibold leading-snug group-hover:text-primary">
-                        {s.name}
-                      </h2>
-                      <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                        {s.description
-                          ? truncateText(s.description, 120)
-                          : 'No description.'}
-                      </p>
+                
                     </Link>
                     <PeerAttributionRow
                       label="Created by"

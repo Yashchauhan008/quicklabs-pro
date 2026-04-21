@@ -11,6 +11,7 @@ export interface Subject {
   /** Legacy / alternate naming */
   created_by_name?: string | null;
   created_by_profile_picture_url?: string | null;
+  banner_url?: string | null;
   created_at?: string;
   updated_at?: string;
   deleted_at?: string | null;
@@ -19,11 +20,14 @@ export interface Subject {
 export interface CreateSubjectData {
   name: string;
   description?: string;
+  banner?: File;
 }
 
 export interface UpdateSubjectData {
   name?: string;
   description?: string;
+  banner?: File;
+  clear_banner?: boolean;
 }
 
 export interface SubjectListParams {

@@ -41,7 +41,7 @@ import {
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { DocumentPreviewPanel } from '@/components/shared/DocumentPreviewPanel';
 import { formatDateTime, formatFileSize } from '@/utils/formate';
-import { Download, Trash2, FileText, Star, X, Info } from 'lucide-react';
+import { Download, Trash2, FileText, Star, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { DOCUMENT_KIND_LABELS, type DocumentAttachment } from '@/types/document';
@@ -57,7 +57,6 @@ import {
 import { StarPicker } from '@/components/shared/StarPicker';
 import { useRateDocument } from '@/hooks/useStudentFeatures';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
 import { fileDedupeKey, mergeIntoFileList } from '@/utils/stageUploadFiles';
 import { toast } from 'react-hot-toast';
 
@@ -81,21 +80,6 @@ function MetaRow({
 function tabLabel(att: DocumentAttachment): string {
   const name = attachmentDisplayTitle(att);
   return name.length > 28 ? `${name.slice(0, 26)}…` : name;
-}
-
-function previewModeLabel(mode: DocumentPreviewMode): string {
-  switch (mode) {
-    case 'pdf':
-      return 'PDF';
-    case 'image':
-      return 'Image';
-    case 'docx':
-      return 'Word (.docx)';
-    case 'pptx':
-      return 'PowerPoint (.pptx)';
-    default:
-      return 'No inline preview';
-  }
 }
 
 export const DocumentDetailPage = () => {
@@ -524,106 +508,6 @@ export const DocumentDetailPage = () => {
               </div>
             </div>
 
-            <aside className="w-full shrink-0 border-t border-border/50 bg-gradient-to-b from-muted/25 to-muted/10 lg:w-[min(18rem,28vw)] lg:max-w-xs lg:border-l lg:border-t-0 xl:w-80">
-              <div className="flex max-h-[min(40vh,360px)] flex-col gap-0 lg:max-h-[min(68vh,820px)] lg:overflow-y-auto lg:overscroll-contain lg:p-1 [scrollbar-width:thin]">
-                <div className="flex items-center gap-2 border-b border-border/40 bg-muted/20 px-4 py-3 lg:sticky lg:top-0 lg:z-10 lg:bg-muted/30 lg:backdrop-blur-sm">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                    <Info className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Open file
-                    </h3>
-                    <p className="truncate text-[11px] text-muted-foreground/90">
-                      {activeAttachment
-                        ? attachmentDisplayTitle(activeAttachment)
-                        : 'Select a file'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4 px-4 py-4">
-                  {activeAttachment ? (
-                    <>
-                      <div className="space-y-2">
-                        <p className="break-words text-sm font-medium leading-snug text-foreground">
-                          {attachmentDisplayTitle(activeAttachment)}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {activeAttachment.is_main ? (
-                            <Badge variant="secondary" className="text-[10px] font-normal">
-                              Main file
-                            </Badge>
-                          ) : null}
-                          <Badge variant="outline" className="text-[10px] font-normal">
-                            {previewModeLabel(previewMode)}
-                          </Badge>
-                        </div>
-                        {activeAttachment.file_size != null ? (
-                          <p className="text-xs text-muted-foreground">
-                            {formatFileSize(activeAttachment.file_size)}
-                            {activeAttachment.file_mime_type
-                              ? ` · ${activeAttachment.file_mime_type}`
-                              : ''}
-                          </p>
-                        ) : activeAttachment.file_mime_type ? (
-                          <p className="text-xs text-muted-foreground">
-                            {activeAttachment.file_mime_type}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <div>
-                        <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                          File note
-                        </h4>
-                        <p className="mt-1.5 whitespace-pre-wrap text-xs leading-relaxed text-foreground/90">
-                          {activeAttachment.description?.trim()
-                            ? activeAttachment.description
-                            : 'No note on this file.'}
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Choose a file from the list to see its details here.
-                    </p>
-                  )}
-
-                  <Separator className="bg-border/60" />
-
-                  <div>
-                    <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      About this material
-                    </h4>
-                    <p className="mt-1.5 line-clamp-6 whitespace-pre-wrap text-xs leading-relaxed text-foreground/90 lg:line-clamp-none">
-                      {doc.description?.trim()
-                        ? doc.description
-                        : 'No description added for this material.'}
-                    </p>
-                  </div>
-
-                  {subject ? (
-                    <>
-                      <Separator className="bg-border/60" />
-                      <div>
-                        <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                          Course
-                        </h4>
-                        <Link
-                          className="mt-1.5 inline-block text-xs font-medium text-primary underline-offset-4 hover:underline"
-                          to={`${generatePath(ROUTES.SUBJECT_DETAILS, {
-                            id: subject.id,
-                          })}${fromExplore ? '?from=explore' : ''}`}
-                        >
-                          {subject.name}
-                        </Link>
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-            </aside>
           </div>
         </section>
 

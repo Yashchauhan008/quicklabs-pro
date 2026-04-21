@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -7,7 +7,7 @@ import {
   type DocumentUploadFormValues,
 } from '@/schema/document';
 import { useUploadDocument } from '@/hooks/useDocuments';
-import { useGetSubjects } from '@/hooks/useSubjects';
+import { useGetSubject, useGetSubjects } from '@/hooks/useSubjects';
 import { ROUTES } from '@/config';
 import { profileUrl } from '@/utils/profileUrls';
 import { Button } from '@/components/ui/button';
@@ -55,9 +55,17 @@ export const DocumentUploadPage = () => {
     page: 1,
     limit: 100,
   });
+  const { data: presetSubjectData } = useGetSubject(
+    presetSubject || undefined,
+  );
   const uploadMutation = useUploadDocument();
 
-  const subjects = subjectsData?.items ?? EMPTY_SUBJECTS;
+  const subjects = useMemo(() => {
+    const list = subjectsData?.items ?? EMPTY_SUBJECTS;
+    if (!presetSubjectData) return list;
+    if (list.some((s) => s.id === presetSubjectData.id)) return list;
+    return [presetSubjectData, ...list];
+  }, [subjectsData?.items, presetSubjectData]);
 
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
@@ -79,10 +87,12 @@ export const DocumentUploadPage = () => {
   useEffect(() => {
     if (!subjects.length) return;
     const current = form.getValues('subject_id');
-    if (current) return;
     const validPreset =
       presetSubject && subjects.some((s) => s.id === presetSubject);
-    form.setValue('subject_id', validPreset ? presetSubject : subjects[0].id);
+    const nextSubjectId = validPreset ? presetSubject : subjects[0].id;
+    if (current !== nextSubjectId) {
+      form.setValue('subject_id', nextSubjectId);
+    }
   }, [subjects, presetSubject, form]);
 
   useEffect(() => {

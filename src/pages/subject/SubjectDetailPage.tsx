@@ -17,7 +17,7 @@ import {
   formatFileSize,
 } from '@/utils/formate';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
-import { Pencil, Trash2, Plus, FileText, Sparkles, Library } from 'lucide-react';
+import { Pencil, Trash2, Plus, FileText, Library } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { DOCUMENT_KIND_LABELS, type SubjectDocument } from '@/types/document';
@@ -30,7 +30,9 @@ import {
 } from '@/utils/subjectAccent';
 import { Star } from 'lucide-react';
 import { PeerAttributionRow } from '@/components/shared/PeerAttributionRow';
-import { pickSubjectCreator, pickDocumentUploader } from '@/utils/displayUser';
+import { pickDocumentUploader } from '@/utils/displayUser';
+import { resolvePublicFileUrl } from '@/utils/publicFileUrl';
+import { UserAvatar } from '@/components/shared/UserAvatar';
 
 type MaterialsTab = 'informational' | 'lab_solutions';
 
@@ -147,7 +149,7 @@ export const SubjectDetailPage = () => {
   );
   const deleteMutation = useDeleteSubject();
 
-  const docs = docsData?.items ?? [];
+  const docs = useMemo(() => docsData?.items ?? [], [docsData?.items]);
   const informationalDocs = useMemo(
     () => docs.filter((d) => !d.kind || d.kind === 'informational'),
     [docs],
@@ -199,12 +201,13 @@ export const SubjectDetailPage = () => {
     !!subjectOwnerId &&
     String(subjectOwnerId) === String(user.id);
 
-  const creator = pickSubjectCreator(subject);
+  const bannerSrc = resolvePublicFileUrl(subject.banner_url);
   const top = computeTopContributor(docs);
   const topUploader = top ? pickDocumentUploader(top.sample) : null;
 
   const tabDocs =
     materialsTab === 'informational' ? informationalDocs : labDocs;
+  const addMaterialLink = `${ROUTES.ADD_DOCUMENT}?subject_id=${encodeURIComponent(id)}`;
 
   const listBack = fromExplore ? ROUTES.EXPLORE_COURSES : ROUTES.SUBJECTS;
   const listBackLabel = fromExplore ? '← All courses' : '← Courses';
@@ -217,72 +220,135 @@ export const SubjectDetailPage = () => {
   const isStudent = isStudentRole(user?.role);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <Button variant="ghost" asChild className="mb-1 -ml-2 h-8 rounded-lg px-2 text-muted-foreground">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <section className="space-y-4 pb-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Button
+            variant="ghost"
+            asChild
+            className="-ml-2 h-8 w-fit rounded-lg px-2 text-muted-foreground"
+          >
             <Link to={listBack}>{listBackLabel}</Link>
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            {subject.name}
-          </h1>
-          {subject.updated_at ? (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Updated {formatDateTime(subject.updated_at)}
-            </p>
-          ) : null}
-          <PeerAttributionRow
-            variant="detail"
-            label="Course author"
-            userId={creator.id}
-            displayName={creator.label}
-            profilePictureUrl={creator.profilePictureUrl}
-            className="mt-3"
-          >
-            {subject.creator_email ? (
-              <p className="mt-0.5 truncate text-[11px] text-muted-foreground/80">
-                {subject.creator_email}
-              </p>
-            ) : null}
-          </PeerAttributionRow>
-        </div>
-        {isOwner ? (
           <div className="flex shrink-0 flex-wrap gap-2">
             <Button asChild size="sm" className="rounded-lg">
-              <Link
-                to={`${ROUTES.ADD_DOCUMENT}?subject_id=${encodeURIComponent(id)}`}
-              >
+              <Link to={addMaterialLink}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add material
               </Link>
             </Button>
-            <Button variant="outline" size="sm" asChild className="rounded-lg">
-              <Link to={generatePath(ROUTES.SUBJECT_EDIT, { id })}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </Link>
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              className="rounded-lg"
-              onClick={() => setConfirmDelete(true)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Remove
-            </Button>
+            {isOwner ? (
+              <>
+              <Button variant="outline" size="sm" asChild className="rounded-lg">
+                <Link to={generatePath(ROUTES.SUBJECT_EDIT, { id })}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </Link>
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="rounded-lg"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Remove
+              </Button>
+              </>
+            ) : null}
           </div>
-        ) : null}
-      </div>
+        </div>
 
-      <section className="rounded-xl border border-border/60 bg-card/60 px-4 py-3 shadow-sm ring-1 ring-black/4 dark:ring-white/6">
-        <h2 className="text-sm font-semibold text-foreground">About</h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
-          {subject.description?.trim() || 'No description yet.'}
-        </p>
+        <div className="flex items-start gap-4">
+          {bannerSrc ? (
+            <img
+              src={bannerSrc}
+              alt={`${subject.name} banner`}
+              className="h-16 w-16 shrink-0 rounded-xl object-cover sm:h-20 sm:w-20"
+            />
+          ) : (
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xl font-semibold text-primary sm:h-20 sm:w-20">
+              {subject.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-2xl font-bold tracking-tight sm:text-3xl">
+              {subject.name}
+            </h1>
+            {subject.updated_at ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Updated {formatDateTime(subject.updated_at)}
+              </p>
+            ) : null}
+          </div>
+        </div>
+        {/* <div className="h-px w-full bg-border/70" /> */}
       </section>
 
-      <section className="space-y-4">
+      <section className="grid gap-4 lg:grid-cols-3">
+        <div className="rounded-xl border border-border/60 bg-card/60 px-4 py-4 shadow-sm ring-1 ring-black/4 dark:ring-white/6 lg:col-span-2">
+          <h2 className="text-sm font-semibold text-foreground">About</h2>
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+            {subject.description?.trim() || 'No description yet.'}
+          </p>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-card/60 px-4 py-4 shadow-sm ring-1 ring-black/4 dark:ring-white/6">
+          <h2 className="text-sm font-semibold text-foreground">Top contributor</h2>
+          {top && topUploader ? (
+            <>
+              <div className="mt-3 flex items-start gap-3">
+                <UserAvatar
+                  profilePictureUrl={topUploader.profilePictureUrl}
+                  name={topUploader.label}
+                  size="lg"
+                  className="h-12 w-12 rounded-xl"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Most contributions
+                  </p>
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {topUploader.label}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {top.count} {top.count === 1 ? 'material' : 'materials'} uploaded
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-border/60 bg-background/60 p-2 text-xs">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Materials
+                  </p>
+                  <p className="font-semibold text-foreground">{docs.length}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Updated
+                  </p>
+                  <p className="truncate font-semibold text-foreground">
+                    {subject.updated_at ? formatDateTime(subject.updated_at) : '—'}
+                  </p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="mt-3 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                No contributions yet. Be the first to upload material in this course.
+              </p>
+              <Button asChild size="sm" className="rounded-lg">
+                <Link to={addMaterialLink}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Become the first contributor
+                </Link>
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-xl border border-border/60 bg-card/40 px-4 py-4 shadow-sm ring-1 ring-black/4 dark:ring-white/6 sm:px-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <h2 className="flex items-center gap-2 text-lg font-semibold">
@@ -301,16 +367,12 @@ export const SubjectDetailPage = () => {
               </Link>
             </p>
           </div>
-          {isOwner ? (
-            <Button asChild size="sm" className="shrink-0 rounded-lg">
-              <Link
-                to={`${ROUTES.ADD_DOCUMENT}?subject_id=${encodeURIComponent(id)}`}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add material
-              </Link>
-            </Button>
-          ) : null}
+          <Button asChild size="sm" className="shrink-0 rounded-lg">
+            <Link to={addMaterialLink}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add material
+            </Link>
+          </Button>
         </div>
 
         {docsLoading ? (
@@ -318,48 +380,11 @@ export const SubjectDetailPage = () => {
         ) : docs.length === 0 ? (
           <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border/80 px-4 py-10 text-center text-sm text-muted-foreground">
             <p>
-              {isOwner
-                ? 'No materials yet. Add a file to build this course library.'
-                : 'No materials listed for this course yet.'}
+              No materials yet. Be the first to add a file to this course.
             </p>
-            {isOwner ? (
-              <Button asChild size="sm" className="rounded-lg">
-                <Link
-                  to={`${ROUTES.ADD_DOCUMENT}?subject_id=${encodeURIComponent(id)}`}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add material
-                </Link>
-              </Button>
-            ) : null}
           </div>
         ) : (
           <>
-            {top && topUploader ? (
-              <div className="flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/6 px-3 py-2.5 dark:border-amber-400/20 dark:bg-amber-400/7">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <PeerAttributionRow
-                  label="Top contributor"
-                  userId={topUploader.id}
-                  displayName={topUploader.label}
-                  profilePictureUrl={topUploader.profilePictureUrl}
-                  hideFooterBorder
-                  className="min-w-0 flex-1"
-                  labelClassName="font-semibold text-amber-900/80 dark:text-amber-200/90"
-                  footerNameClassName="text-sm"
-                  trailingClassName="text-sm"
-                  avatarClassName="h-9 w-9"
-                  trailing={
-                    <>
-                      · {top.count} {top.count === 1 ? 'file' : 'files'}
-                    </>
-                  }
-                />
-              </div>
-            ) : null}
-
             <div
               role="tablist"
               aria-label="Material type"
@@ -422,16 +447,12 @@ export const SubjectDetailPage = () => {
                     No {DOCUMENT_KIND_LABELS[materialsTab].toLowerCase()} files
                     yet.
                   </p>
-                  {isOwner ? (
-                    <Button asChild size="sm" variant="outline" className="rounded-lg">
-                      <Link
-                        to={`${ROUTES.ADD_DOCUMENT}?subject_id=${encodeURIComponent(id)}`}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add material
-                      </Link>
-                    </Button>
-                  ) : null}
+                  <Button asChild size="sm" variant="outline" className="rounded-lg">
+                    <Link to={addMaterialLink}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add material
+                    </Link>
+                  </Button>
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

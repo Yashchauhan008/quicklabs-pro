@@ -29,24 +29,23 @@ const segmentLabel: Record<string, string> = {
   new: 'New enquiry',
   help: 'Get help',
   'super-desk': 'Super Desk',
+  leaderboard: 'Leaderboard',
 };
 
 type Crumb = { path: string; label: string };
 
-/** Build crumbs under `/learn/...` without a redundant "Explore" step. */
+/** Build crumbs under `/learn/...` with direct module paths. */
 function learnPathToCrumbs(parts: string[]): Crumb[] {
   if (parts.length === 0) return [];
 
   const out: Crumb[] = [];
   let i = 0;
 
-  if (parts[0] === 'explore' && parts[1] === 'courses') {
-    out.push({ path: '/learn/explore/courses', label: 'All courses' });
-    i = 2;
-  } else if (parts[0] === 'explore' && parts[1] === 'materials') {
-    out.push({ path: '/learn/explore/materials', label: 'All materials' });
-    i = 2;
-  } else if (parts[0] === 'explore') {
+  if (parts[0] === 'courses') {
+    out.push({ path: '/learn/courses', label: 'All courses' });
+    i = 1;
+  } else if (parts[0] === 'materials') {
+    out.push({ path: '/learn/materials', label: 'All materials' });
     i = 1;
   }
 

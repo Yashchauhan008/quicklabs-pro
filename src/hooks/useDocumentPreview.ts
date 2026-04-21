@@ -11,7 +11,7 @@ export type DocumentPreviewState =
     }
   | { status: 'error'; message?: string }
   | { status: 'ready'; blobUrl: string; mode: 'pdf' | 'image' }
-  | { status: 'ready'; html: string; mode: 'docx' }
+  | { status: 'ready'; arrayBuffer: ArrayBuffer; mode: 'docx' }
   | { status: 'ready'; arrayBuffer: ArrayBuffer; mode: 'pptx' };
 
 export type DocumentPreviewOptions = {
@@ -155,12 +155,10 @@ export function useDocumentPreview(
 
         if (mode === 'docx') {
           const ab = await blob.arrayBuffer();
-          const { default: mammoth } = await import('mammoth');
-          const result = await mammoth.convertToHtml({ arrayBuffer: ab });
           if (cancelled) return;
           setState({
             status: 'ready',
-            html: result.value,
+            arrayBuffer: ab,
             mode: 'docx',
           });
           return;

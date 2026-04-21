@@ -17,6 +17,7 @@ import {
   Globe2,
   LayoutGrid,
   Crown,
+  Trophy,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { ROUTES } from '@/config';
@@ -30,6 +31,12 @@ type NavItem = {
   icon: typeof LayoutDashboard;
   isActive: (pathname: string) => boolean;
   isPremium?: boolean;
+};
+
+type SidebarProps = {
+  mode?: 'desktop' | 'mobile';
+  onNavigate?: () => void;
+  className?: string;
 };
 
 const learnNav: NavItem[] = [
@@ -58,6 +65,12 @@ const learnNav: NavItem[] = [
     icon: Crown,
     isActive: (p) => p === ROUTES.SUPER_DESK,
     isPremium: true,
+  },
+  {
+    name: 'Leaderboard',
+    href: ROUTES.LEADERBOARD,
+    icon: Trophy,
+    isActive: (p) => p === ROUTES.LEADERBOARD,
   },
 ];
 
@@ -91,11 +104,16 @@ const tailNav: NavItem[] = [
   },
 ];
 
-export const Sidebar = () => {
+export const Sidebar = ({
+  mode = 'desktop',
+  onNavigate,
+  className,
+}: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout: logoutContext } = useAuth();
   const logoutMutation = useLogout();
+  const isMobile = mode === 'mobile';
 
   const navigation = useMemo(() => {
     if (isStudentRole(user?.role)) {
@@ -108,10 +126,12 @@ export const Sidebar = () => {
     try {
       await logoutMutation.mutateAsync();
       logoutContext();
+      onNavigate?.();
       toast.success('Signed out. See you soon!');
       navigate('/login');
     } catch {
       logoutContext();
+      onNavigate?.();
       navigate('/login');
     }
   };
@@ -122,6 +142,7 @@ export const Sidebar = () => {
       <Link
         key={item.name}
         to={item.href}
+        onClick={onNavigate}
         className={cn(
           'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
           active
@@ -138,11 +159,27 @@ export const Sidebar = () => {
   };
 
   return (
-    <aside className="w-full shrink-0 border-b border-border/60 bg-card/80 p-3 backdrop-blur-sm md:flex md:h-full md:min-h-0 md:w-[280px] md:border-b-0 md:border-r md:bg-transparent md:p-4 md:backdrop-blur-0">
-      <div className="mx-auto flex min-h-0 w-full max-w-md flex-col rounded-2xl border bg-card shadow-md ring-1 ring-black/4 dark:ring-white/6 md:mx-0 md:h-full md:max-w-none">
+    <aside
+      className={cn(
+        'min-h-0 shrink-0',
+        isMobile
+          ? 'h-full w-full bg-transparent p-0'
+          : 'hidden h-full w-[280px] border-r border-border/60 bg-transparent p-4 lg:flex',
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          'flex min-h-0 w-full flex-col rounded-2xl border bg-card shadow-md ring-1 ring-black/4 dark:ring-white/6',
+          isMobile
+            ? 'h-full rounded-none border-0 shadow-none ring-0'
+            : 'mx-0 h-full max-w-none',
+        )}
+      >
         <div className="shrink-0 p-5 pb-4">
           <Link
             to={ROUTES.DASHBOARD}
+            onClick={onNavigate}
             className="flex items-start gap-3 rounded-xl p-2 -m-2 transition-colors hover:bg-muted/60"
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">

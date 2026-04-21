@@ -44,8 +44,8 @@ export const googleConfig = {
     SETTINGS: '/learn/settings',
     UNAUTHORIZED: '/learn/unauthorized',
     
-    EXPLORE_COURSES: '/learn/explore/courses',
-    EXPLORE_MATERIALS: '/learn/explore/materials',
+    EXPLORE_COURSES: '/learn/courses',
+    EXPLORE_MATERIALS: '/learn/materials',
 
     SUBJECTS: '/learn/subject',
     SUBJECT_CREATE: '/learn/subject/create',
@@ -60,4 +60,5 @@ export const googleConfig = {
     ENQUIRIES: '/learn/enquiries',
     ENQUIRY_NEW: '/learn/enquiries/new',
     SUPER_DESK: '/learn/super-desk',
+    LEADERBOARD: '/learn/leaderboard',
   } as const;

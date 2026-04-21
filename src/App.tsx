@@ -3,38 +3,29 @@ import {
   Routes,
   Route,
   Navigate,
-  useLocation,
 } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/theme-provider';
-import { LearningLayout } from '@/components/admin/AdminLayout';
+import { LearningLayout } from '@/components/user/LearningLayout';
 import { Login } from '@/pages/Login';
 import { NotFound } from '@/pages/NotFound';
-import { Dashboard } from '@/components/admin/Dashboard';
-import { Profile } from '@/components/admin/Profile';
-import { Settings } from '@/components/admin/Settings';
-import { Unauthorized } from '@/components/admin/Unauthorized';
+import { Dashboard } from '@/components/user/Dashboard';
+import { Profile } from '@/components/user/Profile';
+import { Settings } from '@/components/user/Settings';
+import { Unauthorized } from '@/components/auth/Unauthorized';
 import { ROUTES } from '@/config';
-import { SubjectsPage } from '@/pages/admin/SubjectsPage';
-import { SubjectFormPage } from '@/pages/admin/SubjectFormPage';
-import { SubjectDetailPage } from '@/pages/admin/SubjectDetailPage';
-import { DocumentUploadPage } from '@/pages/admin/DocumentUploadPage';
-import { DocumentDetailPage } from '@/pages/admin/DocumentDetailPage';
-import { SuperDeskPage } from '@/pages/admin/SuperDeskPage';
+import { SubjectFormPage } from '@/pages/subject/SubjectFormPage';
+import { SubjectDetailPage } from '@/pages/subject/SubjectDetailPage';
+import { DocumentUploadPage } from '@/pages/material/DocumentUploadPage';
+import { DocumentDetailPage } from '@/pages/material/DocumentDetailPage';
+import { SuperDeskPage } from '@/pages/material/SuperDeskPage';
 import { PeerLookupPage } from '@/pages/learn/PeerLookupPage';
 import { PeerProfilePage } from '@/pages/learn/PeerProfilePage';
 import { EnquiriesPage } from '@/pages/learn/EnquiriesPage';
 import { EnquiryCreatePage } from '@/pages/learn/EnquiryCreatePage';
 import { ExploreCoursesPage } from '@/pages/learn/ExploreCoursesPage';
 import { ExploreMaterialsPage } from '@/pages/learn/ExploreMaterialsPage';
-
-/** Old URLs used `/admin`; send users to the same path under `/learn`. */
-function LegacyAdminRedirect() {
-  const { pathname, search, hash } = useLocation();
-  const tail = pathname.replace(/^\/admin\/?/, '').trim();
-  const path = tail ? `/learn/${tail}` : ROUTES.DASHBOARD;
-  return <Navigate to={`${path}${search}${hash}`} replace />;
-}
+import { LeaderboardPage } from '@/pages/learn/LeaderboardPage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isLoggedIn, isLoadingUser } = useAuth();
@@ -72,13 +63,13 @@ function App() {
                 </ProtectedRoute>
               }
             >
+              <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
-              <Route path="explore/courses" element={<ExploreCoursesPage />} />
-              <Route path="explore/materials" element={<ExploreMaterialsPage />} />
+              <Route path="courses" element={<ExploreCoursesPage />} />
+              <Route path="materials" element={<ExploreMaterialsPage />} />
               <Route path="subject/create" element={<SubjectFormPage />} />
               <Route path="subject/:id/edit" element={<SubjectFormPage />} />
               <Route path="subject/:id" element={<SubjectDetailPage />} />
-              <Route path="subject" element={<SubjectsPage />} />
               <Route path="document/add" element={<DocumentUploadPage />} />
               <Route path="document/:id" element={<DocumentDetailPage />} />
               <Route
@@ -89,6 +80,7 @@ function App() {
               />
               <Route path="enquiries/new" element={<EnquiryCreatePage />} />
               <Route path="enquiries" element={<EnquiriesPage />} />
+              <Route path="leaderboard" element={<LeaderboardPage />} />
               <Route path="super-desk" element={<SuperDeskPage />} />
               <Route path="peers/:peerId" element={<PeerProfilePage />} />
               <Route path="peers" element={<PeerLookupPage />} />
@@ -98,7 +90,6 @@ function App() {
             </Route>
 
             <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-            <Route path="/admin/*" element={<LegacyAdminRedirect />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
