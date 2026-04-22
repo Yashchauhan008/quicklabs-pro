@@ -21,7 +21,7 @@ import {
 import { useGetSubjects } from '@/hooks/useSubjects';
 import { useGetDocuments } from '@/hooks/useDocuments';
 import { getDocuments } from '@/services/api/document';
-import { ROUTES } from '@/config';
+import { IS_DEVELOPMENT, ROUTES } from '@/config';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserAvatar } from '@/components/shared/UserAvatar';
@@ -137,7 +137,7 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6 lg:min-h-[calc(100dvh-9rem)] lg:w-full">
-      <Card className="overflow-hidden border-0 bg-linear-to-r from-violet-600/95 via-indigo-600/95 to-blue-600/95 text-white shadow-xl">
+      <Card className="overflow-hidden border border-white/30 bg-linear-to-r from-violet-600/90 via-indigo-600/90 to-blue-600/90 text-white shadow-xl backdrop-blur-xl">
         <CardHeader className="pb-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
@@ -149,17 +149,19 @@ export const Dashboard = () => {
                 Real-time view of courses, materials, and top contributors.
               </CardDescription>
               <div className="flex flex-wrap gap-2 pt-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-lg border-white/40 bg-white/10 text-white hover:bg-white/20"
-                  asChild
-                >
-                  <Link to={ROUTES.SUBJECT_CREATE}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    New course
-                  </Link>
-                </Button>
+                {IS_DEVELOPMENT && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg border-white/40 bg-white/10 text-white hover:bg-white/20"
+                    asChild
+                  >
+                    <Link to={ROUTES.SUBJECT_CREATE}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      New course
+                    </Link>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -190,7 +192,7 @@ export const Dashboard = () => {
               {stats.map((stat) => (
                 <Card
                   key={stat.title}
-                className="group border-violet-200/70 bg-linear-to-br from-white via-violet-50/40 to-indigo-50/35 shadow-md transition-shadow hover:shadow-lg dark:border-violet-500/20 dark:from-background dark:via-violet-500/5 dark:to-indigo-500/5"
+                  className="group border-violet-200/70 bg-linear-to-br from-white/75 via-violet-50/60 to-indigo-50/50 shadow-md backdrop-blur-md transition-shadow hover:shadow-lg dark:border-violet-500/20 dark:from-background/80 dark:via-violet-500/10 dark:to-indigo-500/10"
                 >
                   <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                     <div className="space-y-1">
@@ -232,7 +234,7 @@ export const Dashboard = () => {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Card className="border-violet-200/60 bg-linear-to-br from-white via-violet-50/35 to-indigo-50/30 shadow-sm dark:border-violet-500/20 dark:from-background dark:via-violet-500/5 dark:to-indigo-500/5">
+            <Card className="border-violet-200/60 bg-linear-to-br from-white/75 via-violet-50/60 to-indigo-50/50 shadow-sm backdrop-blur-md dark:border-violet-500/20 dark:from-background/80 dark:via-violet-500/10 dark:to-indigo-500/10">
               <CardHeader>
                 <CardTitle className="text-base">Recent courses</CardTitle>
                 <CardDescription>Latest added courses</CardDescription>
@@ -249,7 +251,7 @@ export const Dashboard = () => {
                     <Link
                       key={subject.id}
                       to={`/learn/subject/${subject.id}`}
-                    className="flex items-center justify-between rounded-lg border border-violet-200/60 bg-white/70 px-3 py-2 text-sm transition-colors hover:bg-violet-50/80 dark:border-violet-500/20 dark:bg-background/70 dark:hover:bg-violet-500/10"
+                      className="flex items-center justify-between rounded-lg border border-violet-200/60 bg-white/65 px-3 py-2 text-sm backdrop-blur-sm transition-colors hover:bg-violet-50/80 dark:border-violet-500/20 dark:bg-background/70 dark:hover:bg-violet-500/10"
                     >
                       <span className="truncate font-medium">{subject.name}</span>
                       <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -259,7 +261,7 @@ export const Dashboard = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-violet-200/60 bg-linear-to-br from-white via-violet-50/35 to-indigo-50/30 shadow-sm dark:border-violet-500/20 dark:from-background dark:via-violet-500/5 dark:to-indigo-500/5">
+            <Card className="border-violet-200/60 bg-linear-to-br from-white/75 via-violet-50/60 to-indigo-50/50 shadow-sm backdrop-blur-md dark:border-violet-500/20 dark:from-background/80 dark:via-violet-500/10 dark:to-indigo-500/10">
               <CardHeader>
                 <CardTitle className="text-base">Material sneak peek</CardTitle>
                 <CardDescription>Recently uploaded public files</CardDescription>
@@ -278,7 +280,7 @@ export const Dashboard = () => {
                     <Link
                       key={doc.id}
                       to={`/learn/document/${doc.id}`}
-                    className="flex items-center justify-between rounded-lg border border-violet-200/60 bg-white/70 px-3 py-2 text-sm transition-colors hover:bg-violet-50/80 dark:border-violet-500/20 dark:bg-background/70 dark:hover:bg-violet-500/10"
+                      className="flex items-center justify-between rounded-lg border border-violet-200/60 bg-white/65 px-3 py-2 text-sm backdrop-blur-sm transition-colors hover:bg-violet-50/80 dark:border-violet-500/20 dark:bg-background/70 dark:hover:bg-violet-500/10"
                     >
                       <span className="truncate font-medium">{doc.title}</span>
                       <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -290,7 +292,7 @@ export const Dashboard = () => {
           </div>
         </section>
 
-        <Card className="h-full min-h-112 border-violet-200/70 bg-linear-to-br from-white via-violet-50/35 to-indigo-50/30 shadow-md dark:border-violet-500/20 dark:from-background dark:via-violet-500/5 dark:to-indigo-500/5 lg:min-h-full">
+        <Card className="h-full min-h-112 border-violet-200/70 bg-linear-to-br from-white/75 via-violet-50/60 to-indigo-50/50 shadow-md backdrop-blur-md dark:border-violet-500/20 dark:from-background/80 dark:via-violet-500/10 dark:to-indigo-500/10 lg:min-h-full">
           <CardHeader className="pb-3">
             <div className="mb-1 inline-flex w-fit items-center gap-2 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-violet-800 dark:text-violet-200">
               <Trophy className="h-3.5 w-3.5" />
@@ -317,7 +319,7 @@ export const Dashboard = () => {
                 {leaderboard.map((row, index) => (
                   <div
                     key={row.userId}
-                    className="flex items-center justify-between rounded-lg border border-violet-200/70 bg-white/75 px-3 py-2 dark:border-violet-500/20 dark:bg-background/70"
+                    className="flex items-center justify-between rounded-lg border border-violet-200/70 bg-white/65 px-3 py-2 backdrop-blur-sm dark:border-violet-500/20 dark:bg-background/70"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <p className="w-8 shrink-0 text-xs font-semibold text-muted-foreground">

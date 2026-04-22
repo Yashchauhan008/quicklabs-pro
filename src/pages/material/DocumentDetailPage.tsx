@@ -52,13 +52,13 @@ import { pickDocumentUploader } from '@/utils/displayUser';
 import {
   attachmentDisplayTitle,
   getAttachmentPreviewMode,
-  type DocumentPreviewMode,
 } from '@/utils/documentPreview';
 import { StarPicker } from '@/components/shared/StarPicker';
 import { useRateDocument } from '@/hooks/useStudentFeatures';
 import { cn } from '@/lib/utils';
 import { fileDedupeKey, mergeIntoFileList } from '@/utils/stageUploadFiles';
 import { toast } from 'react-hot-toast';
+import { useGetUniversities } from '@/hooks/useAcademicMeta';
 
 function MetaRow({
   label,
@@ -167,8 +167,12 @@ export const DocumentDetailPage = () => {
       description: '',
       visibility: 'PRIVATE',
       kind: 'informational',
+      university_id: '',
+      batch_year: '',
+      semester: '',
     },
   });
+  const { data: universitiesData } = useGetUniversities({ page: 1, limit: 500 });
 
   useEffect(() => {
     if (doc) {
@@ -177,6 +181,9 @@ export const DocumentDetailPage = () => {
         description: doc.description ?? '',
         visibility: doc.visibility,
         kind: doc.kind ?? 'informational',
+        university_id: doc.university_id ?? '',
+        batch_year: doc.batch_year != null ? String(doc.batch_year) : '',
+        semester: doc.semester != null ? String(doc.semester) : '',
       });
     }
   }, [doc, form]);
@@ -188,6 +195,9 @@ export const DocumentDetailPage = () => {
       description: values.description?.trim() ?? '',
       visibility: values.visibility,
       kind: values.kind,
+      university_id: values.university_id || null,
+      batch_year: values.batch_year?.trim() ? Number(values.batch_year.trim()) : null,
+      semester: values.semester?.trim() ? Number(values.semester.trim()) : null,
     });
   };
 
@@ -248,7 +258,7 @@ export const DocumentDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-7xl space-y-4 xl:max-w-[100rem]">
+      <div className="mx-auto w-full max-w-7xl space-y-4 xl:max-w-400">
         <Skeleton className="h-9 w-2/3 max-w-md" />
         <Skeleton className="h-[320px] w-full rounded-xl" />
         <Skeleton className="h-40 w-full rounded-xl" />
@@ -326,7 +336,7 @@ export const DocumentDetailPage = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 xl:max-w-[100rem]">
+    <div className="mx-auto w-full max-w-7xl space-y-6 xl:max-w-400">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <Button
@@ -406,7 +416,7 @@ export const DocumentDetailPage = () => {
 
       <div className="w-full space-y-6">
         <section className="w-full overflow-hidden rounded-xl border border-border/60 bg-card shadow-md ring-1 ring-black/5 dark:bg-card/95 dark:ring-white/10">
-          <div className="flex w-full items-center gap-3 border-b border-border/50 bg-gradient-to-r from-muted/50 to-muted/25 px-5 py-4 sm:px-6">
+          <div className="flex w-full items-center gap-3 border-b border-border/50 bg-linear-to-r from-muted/50 to-muted/25 px-5 py-4 sm:px-6">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <FileText className="h-4 w-4" />
             </div>
@@ -439,7 +449,7 @@ export const DocumentDetailPage = () => {
                     title={fullName}
                     onClick={() => setActiveAttachmentId(att.id)}
                     className={cn(
-                      'inline-flex min-h-[2.5rem] shrink-0 max-w-[min(16rem,42vw)] items-center gap-1.5 rounded-t-md border border-transparent px-3 py-2 text-left text-xs font-medium transition-colors',
+                      'inline-flex min-h-10 shrink-0 max-w-[min(16rem,42vw)] items-center gap-1.5 rounded-t-md border border-transparent px-3 py-2 text-left text-xs font-medium transition-colors',
                       activeAttachmentId === att.id
                         ? 'border-border border-b-transparent bg-card text-foreground shadow-sm'
                         : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
@@ -460,7 +470,7 @@ export const DocumentDetailPage = () => {
           <div className="flex min-h-[min(52vh,640px)] flex-col lg:min-h-[min(68vh,820px)] lg:flex-row">
             {/* Desktop: vertical file rail */}
             <nav
-              className="hidden w-[13.5rem] shrink-0 flex-col border-border/40 bg-muted/10 lg:flex lg:border-r"
+              className="hidden w-54 shrink-0 flex-col border-border/40 bg-muted/10 lg:flex lg:border-r"
               aria-label="Files in this document"
             >
               <div className="flex max-h-[min(68vh,820px)] flex-col gap-0.5 overflow-y-auto overscroll-contain p-2 [scrollbar-width:thin]">
@@ -480,7 +490,7 @@ export const DocumentDetailPage = () => {
                           : 'border-l-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground',
                       )}
                     >
-                      <span className="line-clamp-3 w-full break-words text-xs font-medium leading-snug">
+                      <span className="line-clamp-3 w-full wrap-break-word text-xs font-medium leading-snug">
                         {fullName}
                       </span>
                       {att.is_main ? (
@@ -564,6 +574,11 @@ export const DocumentDetailPage = () => {
                 </Link>
               </MetaRow>
             ) : null}
+            {doc.university_name ? (
+              <MetaRow label="University">{doc.university_name}</MetaRow>
+            ) : null}
+            {doc.batch_year ? <MetaRow label="Batch">{doc.batch_year}</MetaRow> : null}
+            {doc.semester ? <MetaRow label="Semester">{doc.semester}</MetaRow> : null}
           </dl>
         </section>
       </div>
@@ -679,6 +694,43 @@ export const DocumentDetailPage = () => {
                       {form.formState.errors.kind.message}
                     </p>
                   ) : null}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>University</Label>
+                    <Controller
+                      control={form.control}
+                      name="university_id"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value || 'none'}
+                          onValueChange={(value) => {
+                            field.onChange(value === 'none' ? '' : value);
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select university" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {(universitiesData?.items ?? []).map((uni) => (
+                              <SelectItem key={uni.id} value={uni.id}>
+                                {uni.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="batch_year">Batch year</Label>
+                    <Input id="batch_year" {...form.register('batch_year')} placeholder="2026" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="semester">Semester</Label>
+                    <Input id="semester" {...form.register('semester')} placeholder="1-12" />
+                  </div>
                 </div>
                 <Button
                   type="submit"

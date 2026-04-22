@@ -11,9 +11,10 @@ import { Login } from '@/pages/Login';
 import { NotFound } from '@/pages/NotFound';
 import { Dashboard } from '@/components/user/Dashboard';
 import { Profile } from '@/components/user/Profile';
+import { ProfileEditPage } from '@/pages/profile/ProfileEditPage';
 import { Settings } from '@/components/user/Settings';
 import { Unauthorized } from '@/components/auth/Unauthorized';
-import { ROUTES } from '@/config';
+import { IS_DEVELOPMENT, ROUTES } from '@/config';
 import { SubjectFormPage } from '@/pages/subject/SubjectFormPage';
 import { SubjectDetailPage } from '@/pages/subject/SubjectDetailPage';
 import { DocumentUploadPage } from '@/pages/material/DocumentUploadPage';
@@ -67,7 +68,16 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="courses" element={<ExploreCoursesPage />} />
               <Route path="materials" element={<ExploreMaterialsPage />} />
-              <Route path="subject/create" element={<SubjectFormPage />} />
+              <Route
+                path="subject/create"
+                element={
+                  !IS_DEVELOPMENT ? (
+                    <Navigate to={ROUTES.EXPLORE_COURSES} replace />
+                  ) : (
+                    <SubjectFormPage />
+                  )
+                }
+              />
               <Route path="subject/:id/edit" element={<SubjectFormPage />} />
               <Route path="subject/:id" element={<SubjectDetailPage />} />
               <Route path="document/add" element={<DocumentUploadPage />} />
@@ -85,6 +95,7 @@ function App() {
               <Route path="peers/:peerId" element={<PeerProfilePage />} />
               <Route path="peers" element={<PeerLookupPage />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="profile/edit" element={<ProfileEditPage />} />
               <Route path="settings" element={<Settings />} />
               <Route path="unauthorized" element={<Unauthorized />} />
             </Route>

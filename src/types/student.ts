@@ -10,6 +10,19 @@ export interface PeerProfile {
   profile_picture_url?: string | null;
   rating_avg?: number | null;
   rating_count?: number;
+  created_at?: string | null;
+  bio?: string | null;
+  batch_year?: number | null;
+  semester?: number | null;
+  university_id?: string | null;
+  branch_id?: string | null;
+  university_name?: string | null;
+  university_logo_url?: string | null;
+  branch_name?: string | null;
+  /** Your stars for this peer when GET is by the current user; null if you have not rated */
+  my_rating_stars?: number | null;
+  total_courses?: number;
+  total_files?: number;
 }
 
 /** From GET /api/students/bookmarks — same as peer profile plus pin time */

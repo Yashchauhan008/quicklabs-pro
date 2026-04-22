@@ -2,6 +2,22 @@ import type { DocumentAttachment, SubjectDocument } from '@/types/document';
 
 export type DocumentPreviewMode = 'pdf' | 'image' | 'docx' | 'pptx' | 'none';
 
+const MIME_EXTENSION_MAP: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.ms-excel': 'xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'application/vnd.ms-powerpoint': 'ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+  'text/plain': 'txt',
+  'text/csv': 'csv',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
+
 export function displayNameFromFileKey(fileKey: string): string {
   const parts = fileKey.split(/[/\\]/);
   return parts[parts.length - 1] || fileKey;
@@ -75,4 +91,13 @@ export function getDocumentPreviewMode(doc: SubjectDocument): DocumentPreviewMod
     return 'pptx';
   }
   return 'none';
+}
+
+export function getDocumentFileExtension(doc: SubjectDocument): string {
+  const candidate = (doc.original_filename ?? doc.file_name ?? '').trim();
+  const match = /\.([a-z0-9]+)$/i.exec(candidate);
+  if (match?.[1]) return match[1].toLowerCase();
+
+  const mime = getDocumentMime(doc);
+  return MIME_EXTENSION_MAP[mime] ?? 'file';
 }

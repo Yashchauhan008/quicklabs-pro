@@ -38,6 +38,9 @@ export type UpdateDocumentBody = {
   description?: string;
   visibility: string;
   kind: string;
+  university_id?: string | null;
+  batch_year?: number | null;
+  semester?: number | null;
 };
 
 export function updateDocument(id: string, body: UpdateDocumentBody) {

@@ -1,22 +1,62 @@
-import { useMemo, type ReactNode } from 'react';
-import { Link, generatePath } from 'react-router-dom';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { generatePath } from 'react-router-dom';
 import { useGetSubjects } from '@/hooks/useSubjects';
 import { useGetDocuments } from '@/hooks/useDocuments';
 import { ROUTES } from '@/config';
 import { UserAvatar } from '@/components/shared/UserAvatar';
 import { cn } from '@/lib/utils';
-import { BookOpen, FileText, Star } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { formatFileSize, formatDate } from '@/utils/formate';
-import {
-  subjectDocumentCardClass,
-  subjectDocumentIconClass,
-} from '@/utils/subjectAccent';
-import { DOCUMENT_KIND_LABELS } from '@/types/document';
-import { Badge } from '@/components/ui/badge';
+import { BookOpen, Camera, FileText, GraduationCap, Star } from 'lucide-react';
+import { formatDate } from '@/utils/formate';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { SocialProfile } from '@/types/student';
 import type { ProfileTab } from '@/utils/profileUrls';
+import { MaterialCard } from '@/components/shared/MaterialCard';
+import { SubjectCard } from '@/components/shared/SubjectCard';
+import { getSocialFaviconUrl, normalizeSocialUrl } from '@/utils/socialLink';
+import { resolvePublicFileUrl } from '@/utils/publicFileUrl';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+
+function SocialLinkItem({ profile }: { profile: SocialProfile }) {
+  const [iconFailed, setIconFailed] = useState(false);
+  const href = normalizeSocialUrl(profile.value);
+  const faviconUrl = getSocialFaviconUrl(profile.value);
+
+  if (!href) return null;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/65 px-2.5 py-1 text-sm font-medium text-foreground/90 transition-colors hover:border-primary/40 hover:text-primary"
+    >
+      {!iconFailed && faviconUrl ? (
+        <img
+          src={faviconUrl}
+          alt={`${profile.key} favicon`}
+          className="h-4 w-4 shrink-0 rounded-sm"
+          loading="lazy"
+          decoding="async"
+          onError={() => setIconFailed(true)}
+        />
+      ) : (
+        <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm bg-muted text-[10px] font-semibold uppercase text-muted-foreground">
+          {profile.key.slice(0, 1) || 'L'}
+        </span>
+      )}
+      <span className="max-w-56 truncate">{profile.key}</span>
+    </a>
+  );
+}
 
 export type InstagramProfileLayoutProps = {
   userId: string;
@@ -25,39 +65,59 @@ export type InstagramProfileLayoutProps = {
   email?: string | null;
   role?: string | null;
   socialProfiles?: SocialProfile[] | null;
+  bio?: string | null;
+  batchYear?: number | null;
+  semester?: number | null;
+  universityName?: string | null;
+  /** Public path for university mark; same resolution as avatars */
+  universityLogoUrl?: string | null;
+  branchName?: string | null;
   createdAt?: string | null;
   ratingAvg?: number | null;
   ratingCount?: number;
+  totalCourses?: number;
+  totalMaterials?: number;
   tab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
   /** e.g. pin / rate for peer view */
   headerActions?: ReactNode;
+  canEditProfilePicture?: boolean;
+  isUploadingPicture?: boolean;
+  isRemovingPicture?: boolean;
+  onUploadProfilePicture?: (file: File) => Promise<void> | void;
+  onRemoveProfilePicture?: () => Promise<void> | void;
 };
 
-export function InstagramProfileLayout({
+function InstagramProfileLayout({
   userId,
   name,
   profilePictureUrl,
-  email,
-  role,
   socialProfiles,
+  bio,
+  batchYear,
+  semester,
+  universityName,
+  universityLogoUrl,
+  branchName,
   createdAt,
   ratingAvg,
   ratingCount,
+  totalCourses,
+  totalMaterials,
   tab,
   onTabChange,
   headerActions,
+  canEditProfilePicture = false,
+  isUploadingPicture = false,
+  isRemovingPicture = false,
+  onUploadProfilePicture,
+  onRemoveProfilePicture,
 }: InstagramProfileLayoutProps) {
-  const countParams = useMemo(
-    () => ({ created_by: userId, page: 1, limit: 1 }),
-    [userId],
-  );
+  const [pictureDialogOpen, setPictureDialogOpen] = useState(false);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const listSubjectParams = useMemo(
     () => ({ created_by: userId, page: 1, limit: 48 }),
-    [userId],
-  );
-  const countDocParams = useMemo(
-    () => ({ uploaded_by: userId, page: 1, limit: 1 }),
     [userId],
   );
   const listDocParams = useMemo(
@@ -65,31 +125,53 @@ export function InstagramProfileLayout({
     [userId],
   );
 
-  const { data: subjCountData } = useGetSubjects(countParams);
-  const { data: docCountData } = useGetDocuments(countDocParams);
   const { data: subjectsData, isLoading: subjLoading } =
     useGetSubjects(listSubjectParams);
   const { data: documentsData, isLoading: docLoading } =
     useGetDocuments(listDocParams);
 
-  const courseTotal = subjCountData?.meta.total ?? 0;
-  const docTotal = docCountData?.meta.total ?? 0;
-  const subjects = subjectsData?.items ?? [];
-  const documents = documentsData?.items ?? [];
+  const courseTotal = totalCourses ?? subjectsData?.meta.total ?? 0;
+  const materialTotal = totalMaterials ?? documentsData?.meta.total ?? 0;
+  const subjects = useMemo(() => subjectsData?.items ?? [], [subjectsData?.items]);
+  const documents = useMemo(
+    () => documentsData?.items ?? [],
+    [documentsData?.items],
+  );
+  const subjectNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of subjects) {
+      map.set(s.id, s.name);
+    }
+    return map;
+  }, [subjects]);
 
   const showRating =
     ratingCount != null && ratingCount > 0 && ratingAvg != null;
 
+  const universityLogoSrc = resolvePublicFileUrl(universityLogoUrl);
+
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="flex flex-col gap-6 border-b border-border/60 pb-8 sm:flex-row sm:items-start sm:gap-10">
+      <div className="flex flex-col gap-6 pb-8 sm:flex-row sm:items-start sm:gap-10">
         <div className="flex justify-center sm:block">
-          <UserAvatar
-            profilePictureUrl={profilePictureUrl}
-            name={name}
-            size="lg"
-            className="h-28 w-28 rounded-full border-2 border-border/80 text-3xl shadow-md sm:h-36 sm:w-36"
-          />
+          <div className="relative">
+            <UserAvatar
+              profilePictureUrl={profilePictureUrl}
+              name={name}
+              size="lg"
+              className="h-28 w-28 rounded-full border-2 border-border/80 text-3xl shadow-md sm:h-36 sm:w-36"
+            />
+            {canEditProfilePicture ? (
+              <button
+                type="button"
+                className="absolute bottom-1 right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-background/90 text-foreground shadow-md transition-colors hover:bg-muted"
+                aria-label="Edit profile picture"
+                onClick={() => setPictureDialogOpen(true)}
+              >
+                <Camera className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className="min-w-0 flex-1 space-y-4">
@@ -102,22 +184,7 @@ export function InstagramProfileLayout({
             ) : null}
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:justify-start">
-            <button
-              type="button"
-              onClick={() => onTabChange('subjects')}
-              className={cn(
-                'text-center transition-opacity hover:opacity-90',
-                tab === 'subjects' ? 'opacity-100' : 'opacity-80',
-              )}
-            >
-              <span className="block text-lg font-semibold tabular-nums">
-                {courseTotal}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {courseTotal === 1 ? 'course' : 'courses'}
-              </span>
-            </button>
+          <div className="flex flex-wrap items-end justify-center gap-5 sm:justify-start sm:gap-6">
             <button
               type="button"
               onClick={() => onTabChange('documents')}
@@ -126,37 +193,85 @@ export function InstagramProfileLayout({
                 tab === 'documents' ? 'opacity-100' : 'opacity-80',
               )}
             >
-              <span className="block text-lg font-semibold tabular-nums">
-                {docTotal}
+              <span className="block text-lg font-semibold tabular-nums leading-none">
+                {materialTotal}
               </span>
-              <span className="text-xs text-muted-foreground">
-                {docTotal === 1 ? 'file' : 'files'}
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {materialTotal === 1 ? 'material' : 'materials'}
               </span>
             </button>
+            <button
+              type="button"
+              onClick={() => onTabChange('subjects')}
+              className={cn(
+                'text-center transition-opacity hover:opacity-90',
+                tab === 'subjects' ? 'opacity-100' : 'opacity-80',
+              )}
+            >
+              <span className="block text-lg font-semibold tabular-nums leading-none">
+                {courseTotal}
+              </span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {courseTotal === 1 ? 'course' : 'courses'}
+              </span>
+            </button>
+            {universityName ? (
+              <div
+                className="min-w-0 max-w-46 text-center sm:max-w-50 sm:border-l sm:border-border/25 sm:pl-5"
+                title={universityName}
+              >
+                <div className="flex min-h-6 items-center justify-center sm:min-h-7 sm:justify-center">
+                  {universityLogoSrc ? (
+                    <img
+                      src={universityLogoSrc}
+                      alt=""
+                      className="h-5 w-5 object-contain sm:h-6 sm:w-6"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <GraduationCap
+                      className="h-5 w-5 text-muted-foreground/70 sm:h-6 sm:w-6"
+                      aria-hidden
+                    />
+                  )}
+                </div>
+                <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground">
+                  {universityName}
+                </p>
+              </div>
+            ) : null}
             {showRating ? (
               <div className="text-center">
-                <span className="inline-flex items-center justify-center gap-1 text-lg font-semibold tabular-nums">
+                <span className="inline-flex items-center justify-center gap-1 text-lg font-semibold tabular-nums leading-none">
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                   {Number(ratingAvg).toFixed(1)}
                 </span>
-                <span className="block text-xs text-muted-foreground">
+                <span className="mt-1 block text-xs text-muted-foreground">
                   {ratingCount} rating{ratingCount === 1 ? '' : 's'}
                 </span>
               </div>
             ) : null}
           </div>
 
-          <div className="space-y-2 text-center sm:text-left">
-            {role ? (
-              <p className="text-sm">
-                <span className="text-muted-foreground">Role </span>
-                <Badge variant="secondary" className="capitalize">
-                  {role}
-                </Badge>
-              </p>
+          <div className="space-y-3 text-center sm:text-left">
+            {bio ? (
+              <p className="whitespace-pre-line text-sm text-muted-foreground">{bio}</p>
             ) : null}
-            {email ? (
-              <p className="text-sm text-muted-foreground">{email}</p>
+            {branchName || batchYear != null || semester != null ? (
+              <p className="text-xs text-muted-foreground">
+                {[
+                  branchName,
+                  batchYear != null ? `Batch ${String(batchYear)}` : null,
+                  semester != null
+                    ? semester === 0
+                      ? 'Passout'
+                      : `Sem ${String(semester)}`
+                    : null,
+                ]
+                  .filter((x) => x != null && x !== '')
+                  .join(' · ')}
+              </p>
             ) : null}
             {createdAt ? (
               <p className="text-xs text-muted-foreground">
@@ -168,49 +283,121 @@ export function InstagramProfileLayout({
           {socialProfiles && socialProfiles.length > 0 ? (
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 sm:justify-start">
               {socialProfiles.map((p) => (
-                <a
-                  key={`${p.key}-${p.value}`}
-                  href={p.value}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-primary hover:underline"
-                >
-                  {p.key}
-                </a>
+                <SocialLinkItem key={`${p.key}-${p.value}`} profile={p} />
               ))}
             </div>
           ) : null}
         </div>
       </div>
 
-      <div className="sticky top-14 z-[1] -mx-4 border-b border-border/60 bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:top-0 md:mx-0 md:px-0">
-        <div className="mx-auto flex max-w-3xl justify-center gap-0 sm:gap-8">
+      {canEditProfilePicture ? (
+        <Dialog open={pictureDialogOpen} onOpenChange={setPictureDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Update profile picture</DialogTitle>
+              <DialogDescription>
+                Upload a new image or remove your current one.
+              </DialogDescription>
+            </DialogHeader>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = '';
+                if (f && onUploadProfilePicture) {
+                  void Promise.resolve(onUploadProfilePicture(f)).then(() =>
+                    setPictureDialogOpen(false),
+                  );
+                }
+              }}
+            />
+            <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-3">
+              <UserAvatar
+                profilePictureUrl={profilePictureUrl}
+                name={name}
+                size="md"
+                className="h-12 w-12 rounded-xl"
+              />
+              <div>
+                <p className="text-sm font-medium">{name}</p>
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG, WebP up to 5MB
+                </p>
+              </div>
+            </div>
+            <DialogFooter className="sm:justify-start">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingPicture}
+              >
+                {isUploadingPicture ? 'Uploading…' : 'Upload new photo'}
+              </Button>
+              {profilePictureUrl ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-muted-foreground"
+                  disabled={isRemovingPicture}
+                  onClick={() => setRemoveConfirmOpen(true)}
+                >
+                  {isRemovingPicture ? 'Removing…' : 'Remove photo'}
+                </Button>
+              ) : null}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ) : null}
+      <ConfirmationModal
+        open={removeConfirmOpen}
+        onOpenChange={setRemoveConfirmOpen}
+        title="Remove profile photo?"
+        description="This will remove your current profile picture from your account."
+        confirmText="Remove"
+        variant="destructive"
+        isProcessing={isRemovingPicture}
+        onConfirm={async () => {
+          if (!onRemoveProfilePicture) return;
+          await Promise.resolve(onRemoveProfilePicture());
+          setRemoveConfirmOpen(false);
+          setPictureDialogOpen(false);
+        }}
+      />
+
+      <div className="sticky top-14 z-1 -mx-4 bg-background/20 px-4 py-3 backdrop-blur supports-backdrop-filter:bg-background/15 md:top-0 md:mx-0 md:px-0">
+        <div className="mx-auto flex max-w-3xl justify-end">
+          <div className="inline-flex items-center gap-1 rounded-2xl border border-violet-200/50 bg-white/45 p-1 shadow-md ring-1 ring-black/5 backdrop-blur-lg dark:border-violet-500/15 dark:bg-background/45 dark:ring-white/10">
+          <button
+            type="button"
+            onClick={() => onTabChange('documents')}
+            className={cn(
+              'flex min-w-[130px] items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold uppercase tracking-wide transition-all',
+              tab === 'documents'
+                ? 'bg-linear-to-r from-violet-600 to-indigo-600 text-white shadow-md'
+                : 'text-muted-foreground hover:bg-violet-500/10 hover:text-foreground',
+            )}
+          >
+            <FileText className="h-4 w-4" />
+            Materials
+          </button>
           <button
             type="button"
             onClick={() => onTabChange('subjects')}
             className={cn(
-              'flex flex-1 items-center justify-center gap-2 border-t-0 border-b-2 py-3 text-xs font-semibold uppercase tracking-wide transition-colors sm:flex-initial sm:min-w-[140px]',
+              'flex min-w-[130px] items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold uppercase tracking-wide transition-all',
               tab === 'subjects'
-                ? 'border-foreground text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
+                ? 'bg-linear-to-r from-violet-600 to-indigo-600 text-white shadow-md'
+                : 'text-muted-foreground hover:bg-violet-500/10 hover:text-foreground',
             )}
           >
             <BookOpen className="h-4 w-4" />
             Courses
           </button>
-          <button
-            type="button"
-            onClick={() => onTabChange('documents')}
-            className={cn(
-              'flex flex-1 items-center justify-center gap-2 border-t-0 border-b-2 py-3 text-xs font-semibold uppercase tracking-wide transition-colors sm:flex-initial sm:min-w-[140px]',
-              tab === 'documents'
-                ? 'border-foreground text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <FileText className="h-4 w-4" />
-            Files
-          </button>
+          </div>
         </div>
       </div>
 
@@ -229,20 +416,13 @@ export function InstagramProfileLayout({
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
               {subjects.map((s) => (
-                <Link
+                <SubjectCard
                   key={s.id}
-                  to={generatePath(ROUTES.SUBJECT_DETAILS, { id: s.id })}
-                  className="group aspect-square overflow-hidden rounded-lg border border-border/60 bg-muted/30 shadow-sm ring-1 ring-black/5 transition hover:ring-primary/30 dark:ring-white/10"
-                >
-                  <div className="flex h-full flex-col justify-between p-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                      <BookOpen className="h-4 w-4" />
-                    </div>
-                    <p className="line-clamp-3 text-left text-xs font-semibold leading-snug group-hover:text-primary">
-                      {s.name}
-                    </p>
-                  </div>
-                </Link>
+                  subject={s}
+                  href={generatePath(ROUTES.SUBJECT_DETAILS, { id: s.id })}
+                  compact
+                  showCreator={false}
+                />
               ))}
             </div>
           )
@@ -254,55 +434,19 @@ export function InstagramProfileLayout({
           </div>
         ) : documents.length === 0 ? (
           <p className="py-16 text-center text-sm text-muted-foreground">
-            No uploaded files to show yet.
+            No materials to show yet.
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
             {documents.map((d) => (
-              <Link
+              <MaterialCard
                 key={d.id}
-                to={generatePath(ROUTES.DOCUMENT_DETAILS, { id: d.id })}
-                className="group aspect-square overflow-hidden rounded-lg border border-border/40 shadow-sm ring-1 ring-black/5 transition hover:shadow-md dark:ring-white/10"
-              >
-                <Card
-                  className={cn(
-                    'h-full gap-0 border-0 py-0 shadow-none',
-                    subjectDocumentCardClass(d.subject_id),
-                  )}
-                >
-                  <CardContent className="flex h-full flex-col p-2.5 pt-2">
-                    <div
-                      className={cn(
-                        'mb-1.5 flex h-7 w-7 items-center justify-center',
-                        subjectDocumentIconClass(d.subject_id),
-                      )}
-                    >
-                      <FileText className="h-3.5 w-3.5 opacity-90" />
-                    </div>
-                    <p className="line-clamp-3 text-left text-[11px] font-semibold leading-tight group-hover:text-primary">
-                      {d.title}
-                    </p>
-                    {d.kind ? (
-                      <Badge
-                        variant="secondary"
-                        className="mt-auto w-fit px-1 py-0 text-[9px] font-normal"
-                      >
-                        {DOCUMENT_KIND_LABELS[d.kind]}
-                      </Badge>
-                    ) : null}
-                    {d.file_count != null && d.file_count > 1 ? (
-                      <span className="mt-1 text-[10px] text-muted-foreground">
-                        {d.file_count} files
-                      </span>
-                    ) : null}
-                    {d.file_size != null ? (
-                      <span className="mt-1 text-[10px] text-muted-foreground">
-                        {formatFileSize(d.file_size)}
-                      </span>
-                    ) : null}
-                  </CardContent>
-                </Card>
-              </Link>
+                document={d}
+                href={generatePath(ROUTES.DOCUMENT_DETAILS, { id: d.id })}
+                courseName={d.subject_name ?? subjectNameById.get(d.subject_id) ?? 'Course'}
+                compact
+                showUploader={false}
+              />
             ))}
           </div>
         )}
@@ -310,3 +454,6 @@ export function InstagramProfileLayout({
     </div>
   );
 }
+
+export { InstagramProfileLayout };
+export default InstagramProfileLayout;

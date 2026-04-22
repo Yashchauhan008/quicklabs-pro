@@ -6,21 +6,12 @@ import { ROUTES } from '@/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useDebounce } from '@/hooks/useDebounce';
-import { truncateText, formatFileSize } from '@/utils/formate';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PeerAttributionRow } from '@/components/shared/PeerAttributionRow';
-import { pickDocumentUploader } from '@/utils/displayUser';
-import { DOCUMENT_KIND_LABELS } from '@/types/document';
 import { useAuth } from '@/context/AuthContext';
 import { isStudentRole } from '@/utils/roles';
-import { FileText, Globe2, Star, Upload } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import {
-  subjectDocumentCardClass,
-  subjectDocumentIconClass,
-} from '@/utils/subjectAccent';
+import { Globe2, Upload } from 'lucide-react';
+import { MaterialCard } from '@/components/shared/MaterialCard';
 
 export const ExploreMaterialsPage = () => {
   const { user } = useAuth();
@@ -109,75 +100,14 @@ export const ExploreMaterialsPage = () => {
             {items.map((d) => {
               const courseName =
                 d.subject_name ?? subjectNameById.get(d.subject_id) ?? 'Course';
-              const uploader = pickDocumentUploader(d);
               return (
-                <Card
+                <MaterialCard
                   key={d.id}
-                  className={cn(
-                    'h-full gap-0 rounded-xl border-0 py-0 shadow-md transition-shadow hover:shadow-lg',
-                    subjectDocumentCardClass(d.subject_id),
-                  )}
-                >
-                  <CardContent className="flex flex-col p-3.5 pt-3">
-                    <Link
-                      to={`${generatePath(ROUTES.DOCUMENT_DETAILS, { id: d.id })}?from=explore`}
-                      className="group -m-3.5 mb-0 rounded-t-xl p-3.5 pb-0 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <div className="mb-2 flex items-start justify-between gap-2">
-                        <div
-                          className={cn(
-                            'flex h-8 w-8 shrink-0 items-center justify-center',
-                            subjectDocumentIconClass(d.subject_id),
-                          )}
-                        >
-                          <FileText className="h-4 w-4 opacity-90" />
-                        </div>
-                        {d.kind ? (
-                          <Badge
-                            variant="secondary"
-                            className="shrink-0 px-1.5 py-0 text-[11px] font-normal leading-tight"
-                          >
-                            {DOCUMENT_KIND_LABELS[d.kind]}
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <h2 className="line-clamp-2 text-base font-semibold leading-snug group-hover:text-primary">
-                        {d.title}
-                      </h2>
-                      <p className="mt-0.5 text-sm text-muted-foreground">
-                        {courseName}
-                      </p>
-                      {d.description ? (
-                        <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                          {truncateText(d.description, 100)}
-                        </p>
-                      ) : null}
-                      <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-muted-foreground">
-                        {d.file_count != null && d.file_count > 1 ? (
-                          <span>{d.file_count} files</span>
-                        ) : null}
-                        {d.file_size != null ? (
-                          <span>{formatFileSize(d.file_size)}</span>
-                        ) : null}
-                        {isStudent &&
-                        d.rating_count != null &&
-                        d.rating_count > 0 ? (
-                          <span className="inline-flex items-center gap-1">
-                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                            {Number(d.rating_avg ?? 0).toFixed(1)} (
-                            {d.rating_count})
-                          </span>
-                        ) : null}
-                      </div>
-                    </Link>
-                    <PeerAttributionRow
-                      label="Uploaded by"
-                      userId={uploader.id}
-                      displayName={uploader.label}
-                      profilePictureUrl={uploader.profilePictureUrl}
-                    />
-                  </CardContent>
-                </Card>
+                  document={d}
+                  href={`${generatePath(ROUTES.DOCUMENT_DETAILS, { id: d.id })}?from=explore`}
+                  courseName={courseName}
+                  isStudent={isStudent}
+                />
               );
             })}
           </div>

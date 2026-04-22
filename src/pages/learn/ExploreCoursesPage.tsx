@@ -1,17 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link, generatePath } from 'react-router-dom';
 import { useGetSubjects } from '@/hooks/useSubjects';
-import { ROUTES } from '@/config';
+import { IS_DEVELOPMENT, ROUTES } from '@/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useDebounce } from '@/hooks/useDebounce';
-import { truncateText } from '@/utils/formate';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PeerAttributionRow } from '@/components/shared/PeerAttributionRow';
-import { pickSubjectCreator } from '@/utils/displayUser';
-import { resolvePublicFileUrl } from '@/utils/publicFileUrl';
-import { BookOpen, Globe2, Plus } from 'lucide-react';
+import { Globe2, Plus } from 'lucide-react';
+import { SubjectCard } from '@/components/shared/SubjectCard';
 
 export const ExploreCoursesPage = () => {
   const [page, setPage] = useState(1);
@@ -47,12 +44,14 @@ export const ExploreCoursesPage = () => {
             its materials.
           </p>
         </div>
-        <Button asChild className="shrink-0 rounded-lg">
-          <Link to={ROUTES.SUBJECT_CREATE}>
-            <Plus className="mr-2 h-4 w-4" />
-            New course
-          </Link>
-        </Button>
+        {IS_DEVELOPMENT && (
+          <Button asChild className="shrink-0 rounded-lg">
+            <Link to={ROUTES.SUBJECT_CREATE}>
+              <Plus className="mr-2 h-4 w-4" />
+              New course
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -86,54 +85,12 @@ export const ExploreCoursesPage = () => {
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((s) => {
-              const creator = pickSubjectCreator(s);
-              const subjectImageSrc = resolvePublicFileUrl(s.banner_url);
               return (
-                <Card
+                <SubjectCard
                   key={s.id}
-                  className="h-full gap-0 rounded-xl border-0 py-0 shadow-md ring-1 ring-black/[0.04] transition-shadow hover:shadow-lg dark:ring-white/[0.06]"
-                >
-                  <CardContent className="flex flex-col p-3.5 pt-3">
-                    <Link
-                      to={`${generatePath(ROUTES.SUBJECT_DETAILS, { id: s.id })}?from=explore`}
-                      className="group -m-3.5 mb-0 rounded-t-xl p-3.5 pb-0 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <div className="mb-2 flex items-start gap-3">
-                        <div className="flex-shrink-0">
-                          {subjectImageSrc ? (
-                            <img
-                              src={subjectImageSrc}
-                              alt={`${s.name} course`}
-                              className="h-20 w-20 rounded-lg object-cover border border-border/30 shadow-sm"
-                            />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary border border-border/30 shadow-sm">
-                              <BookOpen className="h-6 w-6" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col flex-1 min-w-0">
-                          <h2 className="line-clamp-2 text-base font-semibold leading-snug group-hover:text-primary">
-                            {s.name}
-                          </h2>
-                          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                            {s.description
-                              ? truncateText(s.description, 120)
-                              : 'No description.'}
-                          </p>
-                        </div>
-                      </div>
-                
-                    </Link>
-                    <PeerAttributionRow
-                      label="Created by"
-                      userId={creator.id}
-                      displayName={creator.label}
-                      profilePictureUrl={creator.profilePictureUrl}
-                      className="border-border/60 pt-2.5"
-                    />
-                  </CardContent>
-                </Card>
+                  subject={s}
+                  href={`${generatePath(ROUTES.SUBJECT_DETAILS, { id: s.id })}?from=explore`}
+                />
               );
             })}
           </div>

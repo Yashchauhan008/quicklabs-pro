@@ -12,7 +12,9 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = Cookies.get('token');
-    if (token) {
+    const hasAuthorizationHeader =
+      !!config.headers?.Authorization || !!config.headers?.authorization;
+    if (token && !hasAuthorizationHeader) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -31,7 +33,12 @@ axiosInstance.interceptors.response.use(
       window.location.href = '/login';
     }
     if (error.response?.status === 403) {
-      toast.error('You are not allowed to access this resource');
+      const skipToast =
+        error.config?.headers?.['X-Skip-Forbidden-Toast'] === '1' ||
+        error.config?.headers?.['x-skip-forbidden-toast'] === '1';
+      if (!skipToast) {
+        toast.error('You are not allowed to access this resource');
+      }
       return Promise.reject({
         code: 'forbidden',
         message: 'You are not authorized to access this resource',

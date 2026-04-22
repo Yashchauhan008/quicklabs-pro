@@ -48,15 +48,16 @@ export const LearningLayout = () => {
   return (
     <div
       className={cn(
-        'flex min-h-screen flex-col overflow-x-hidden bg-linear-to-br from-sky-50/80 via-background to-violet-50/40',
-        'dark:from-background dark:via-background dark:to-primary/5',
+        'relative flex min-h-screen flex-col overflow-x-hidden bg-linear-to-br from-violet-100/70 via-blue-50/50 to-indigo-100/70',
+        'dark:from-background dark:via-background dark:to-indigo-950/30',
         /* Pin shell to viewport on md+ so sidebar height is the screen, not the page */
         'lg:h-dvh lg:max-h-dvh lg:min-h-0 lg:flex-row lg:overflow-hidden',
       )}
     >
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.18),transparent_45%),radial-gradient(circle_at_bottom_left,rgba(168,85,247,0.14),transparent_50%)]" />
       <Sidebar mode="desktop" />
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:min-h-0">
-        <header className="z-10 shrink-0 border-b border-border/60 bg-background/75 shadow-sm backdrop-blur-md supports-backdrop-filter:bg-background/60 lg:sticky lg:top-0">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-hidden">
+        <header className="z-10 shrink-0 border-b rounded-bl-2xl border-violet-300/30 bg-white/45 shadow-sm backdrop-blur-xl supports-backdrop-filter:bg-white/35 dark:border-violet-500/20 dark:bg-background/50 lg:sticky lg:top-0">
           <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6 lg:px-8">
             <Button
               type="button"
@@ -81,8 +82,8 @@ export const LearningLayout = () => {
                     className={cn(
                       'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                       isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                        ? 'bg-linear-to-r from-violet-600 to-indigo-600 text-white shadow-sm'
+                        : 'text-muted-foreground hover:bg-violet-500/10 hover:text-foreground',
                     )}
                   >
                     {item.label}
@@ -109,10 +110,10 @@ export const LearningLayout = () => {
                     key={item.label}
                     to={item.to}
                     className={cn(
-                      'flex min-h-12 flex-col items-center justify-center rounded-xl border px-2 py-1.5 text-[11px] font-medium transition-colors',
+                      'flex min-h-12 flex-col items-center justify-center rounded-xl border border-white/50 bg-white/45 px-2 py-1.5 text-[11px] font-medium shadow-sm backdrop-blur-md transition-colors dark:border-violet-500/20 dark:bg-background/60',
                       isActive
-                        ? 'border-primary/40 bg-primary/10 text-primary'
-                        : 'border-border/70 bg-background/60 text-muted-foreground hover:text-foreground',
+                        ? 'border-violet-400/60 bg-violet-500/15 text-violet-700 dark:text-violet-200'
+                        : 'text-muted-foreground hover:border-violet-300/60 hover:text-foreground',
                     )}
                     aria-current={isActive ? 'page' : undefined}
                   >
@@ -124,7 +125,7 @@ export const LearningLayout = () => {
             </nav>
           </div>
         </header>
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
+        <main className="flex-1 overflow-y-visible lg:min-h-0 lg:overflow-y-auto lg:overscroll-y-contain">
           <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             <Outlet />
           </div>

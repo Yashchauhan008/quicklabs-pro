@@ -41,11 +41,17 @@ export const bookmarkKeys = {
 export function usePatchStudentProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (social_profiles: SocialProfile[]) =>
-      patchStudentProfile({ social_profiles }),
+    mutationFn: (payload: {
+      social_profiles: SocialProfile[];
+      bio?: string | null;
+      batch_year?: number | null;
+      semester?: number | null;
+      university_id?: string | null;
+      branch_id?: string | null;
+    }) => patchStudentProfile(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['authMeta'] });
-      toast.success('Profile links saved');
+      toast.success('Profile updated');
     },
     onError: (err: unknown) => {
       toast.error(getApiErrorMessage(err) || 'Could not save links');

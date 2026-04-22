@@ -24,6 +24,9 @@ export const documentUploadSchema = z
       .optional(),
     visibility: visibilitySchema,
     kind: documentKindSchema,
+    university_id: z.string().uuid().optional().or(z.literal('')),
+    batch_year: z.string().optional(),
+    semester: z.string().optional(),
     files: z
       .array(fileItemSchema)
       .min(1, 'Add at least one file')
@@ -74,6 +77,9 @@ export const documentUpdateSchema = z.object({
   description: z.string().max(2000, 'Description is too long').optional(),
   visibility: visibilitySchema,
   kind: documentKindSchema,
+  university_id: z.string().uuid().optional().or(z.literal('')),
+  batch_year: z.string().optional(),
+  semester: z.string().optional(),
 });
 
 export type DocumentUpdateFormValues = z.infer<typeof documentUpdateSchema>;

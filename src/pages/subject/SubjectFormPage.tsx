@@ -192,7 +192,7 @@ export const SubjectFormPage = () => {
               ) : existingBannerSrc && !clearBanner ? (
                 <img
                   src={existingBannerSrc}
-                  alt={`${subject.name} banner`}
+                  alt={`${subject?.name ?? 'Course'} banner`}
                   className="aspect-square w-32 rounded-md border object-cover"
                 />
               ) : (

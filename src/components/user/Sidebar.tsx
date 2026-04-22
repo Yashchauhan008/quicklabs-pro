@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   Settings,
   LogOut,
-  User,
   GraduationCap,
   Users,
   CircleHelp,
@@ -91,12 +90,6 @@ const studentNav: NavItem[] = [
 
 const tailNav: NavItem[] = [
   {
-    name: 'Profile',
-    href: ROUTES.PROFILE,
-    icon: User,
-    isActive: (p) => p.startsWith('/learn/profile'),
-  },
-  {
     name: 'Preferences',
     href: ROUTES.SETTINGS,
     icon: Settings,
@@ -146,10 +139,10 @@ export const Sidebar = ({
         className={cn(
           'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
           active
-            ? 'bg-primary text-primary-foreground shadow-sm'
+            ? 'bg-linear-to-r from-violet-600 to-indigo-600 text-white shadow-sm'
             : item.isPremium
-              ? 'bg-linear-to-r from-violet-500/10 to-blue-500/10 text-foreground ring-1 ring-violet-300/60 hover:from-violet-500/20 hover:to-blue-500/20'
-              : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+              ? 'bg-linear-to-r from-violet-500/15 to-blue-500/15 text-foreground ring-1 ring-violet-300/60 hover:from-violet-500/25 hover:to-blue-500/25'
+              : 'text-muted-foreground hover:bg-violet-500/10 hover:text-foreground',
         )}
       >
         <item.icon className="h-5 w-5 shrink-0 opacity-90" />
@@ -164,13 +157,13 @@ export const Sidebar = ({
         'min-h-0 shrink-0',
         isMobile
           ? 'h-full w-full bg-transparent p-0'
-          : 'hidden h-full w-[280px] border-r border-border/60 bg-transparent p-4 lg:flex',
+          : 'hidden h-full w-[280px] bg-transparent p-4 lg:flex',
         className,
       )}
     >
       <div
         className={cn(
-          'flex min-h-0 w-full flex-col rounded-2xl border bg-card shadow-md ring-1 ring-black/4 dark:ring-white/6',
+          'flex min-h-0 w-full flex-col rounded-2xl border border-white/60 bg-white/55 shadow-xl ring-1 ring-violet-300/30 backdrop-blur-xl dark:border-violet-500/20 dark:bg-background/55 dark:ring-violet-500/20',
           isMobile
             ? 'h-full rounded-none border-0 shadow-none ring-0'
             : 'mx-0 h-full max-w-none',
@@ -180,9 +173,9 @@ export const Sidebar = ({
           <Link
             to={ROUTES.DASHBOARD}
             onClick={onNavigate}
-            className="flex items-start gap-3 rounded-xl p-2 -m-2 transition-colors hover:bg-muted/60"
+            className="-m-2 flex items-start gap-3 rounded-xl p-2 transition-colors hover:bg-violet-500/10"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-violet-600 to-indigo-600 text-white shadow-sm">
               <GraduationCap className="h-5 w-5" />
             </div>
             <div className="min-w-0 text-left">
@@ -222,9 +215,13 @@ export const Sidebar = ({
         <Separator className="shrink-0 opacity-60" />
 
         <div className="shrink-0 p-3">
-          <Card className="border-0 bg-muted/50 shadow-none">
-            <CardContent className="space-y-3 p-3">
-              <div className="flex items-center gap-3">
+          <Card className="border border-violet-200/60 bg-white/55 shadow-none backdrop-blur-md dark:border-violet-500/20 dark:bg-background/55">
+            <CardContent className="space-y-2.5 p-2.5">
+              <Link
+                to={ROUTES.PROFILE}
+                onClick={onNavigate}
+                className="flex items-center gap-3 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-violet-500/10"
+              >
                 <UserAvatar
                   profilePictureUrl={user?.profile_picture_url}
                   name={user?.name ?? '?'}
@@ -237,12 +234,12 @@ export const Sidebar = ({
                     {user?.email}
                   </p>
                 </div>
-              </div>
+              </Link>
               <Button
                 onClick={handleLogout}
                 variant="outline"
                 size="sm"
-                className="w-full justify-center rounded-lg"
+                className="mt-0.5 w-full justify-center rounded-lg border-violet-300/50 bg-white/70 hover:bg-violet-500/10 dark:border-violet-500/20 dark:bg-background/60"
                 disabled={logoutMutation.isPending}
               >
                 <LogOut className="mr-2 h-4 w-4" />

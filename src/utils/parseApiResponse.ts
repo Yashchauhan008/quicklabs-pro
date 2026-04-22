@@ -17,10 +17,19 @@ function normalizeMeta(
   if (!raw || typeof raw !== 'object') {
     return fallbackMeta(page, limit);
   }
-  const total = Number(raw.total ?? 0);
-  const lim = Number(raw.limit ?? limit);
-  const pg = Number(raw.page ?? page);
-  let totalPages = Number(raw.totalPages ?? raw.total_pages ?? 0);
+  const total = Number(
+    raw.total ??
+      raw.total_count ??
+      raw.totalCount ??
+      raw.total_items ??
+      raw.totalItems ??
+      0,
+  );
+  const lim = Number(raw.limit ?? raw.per_page ?? raw.page_size ?? limit);
+  const pg = Number(raw.page ?? raw.current_page ?? raw.currentPage ?? page);
+  let totalPages = Number(
+    raw.totalPages ?? raw.total_pages ?? raw.page_count ?? raw.total_pages_count ?? 0,
+  );
   if (!totalPages && total > 0 && lim > 0) {
     totalPages = Math.ceil(total / lim);
   }

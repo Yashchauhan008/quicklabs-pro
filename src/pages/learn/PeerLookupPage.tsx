@@ -22,6 +22,7 @@ import {
 import { Bookmark, Star, ChevronDown, ChevronRight } from 'lucide-react';
 import { UserAvatar } from '@/components/shared/UserAvatar';
 import type { BookmarkedPeer } from '@/types/student';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 
 const uuidRe =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -36,11 +37,11 @@ function formatPinnedAt(iso: string) {
 
 function BookmarkRow({
   peer,
-  onUnpin,
+  onAskUnpin,
   unpinning,
 }: {
   peer: BookmarkedPeer;
-  onUnpin: () => void;
+  onAskUnpin: () => void;
   unpinning: boolean;
 }) {
   return (
@@ -80,7 +81,7 @@ function BookmarkRow({
           size="sm"
           className="rounded-lg text-muted-foreground"
           disabled={unpinning}
-          onClick={onUnpin}
+          onClick={onAskUnpin}
         >
           {unpinning ? 'Removing…' : 'Unpin'}
         </Button>
@@ -98,6 +99,7 @@ export const PeerLookupPage = () => {
   const [showIdLookup, setShowIdLookup] = useState(false);
   const [raw, setRaw] = useState('');
   const [lookupError, setLookupError] = useState('');
+  const [pendingUnpinPeer, setPendingUnpinPeer] = useState<BookmarkedPeer | null>(null);
 
   const isStudent = isStudentRole(user?.role);
 
@@ -139,7 +141,7 @@ export const PeerLookupPage = () => {
         </p>
       </div>
 
-      <Card className="border-0 shadow-md ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
+      <Card className="border-0 shadow-md ring-1 ring-black/4 dark:ring-white/6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Bookmark className="h-5 w-5" />
@@ -185,11 +187,31 @@ export const PeerLookupPage = () => {
                 unpinning={
                   unpinMutation.isPending && unpinMutation.variables === peer.id
                 }
-                onUnpin={() => unpinMutation.mutate(peer.id)}
+                onAskUnpin={() => setPendingUnpinPeer(peer)}
               />
             ))}
         </CardContent>
       </Card>
+      <ConfirmationModal
+        open={!!pendingUnpinPeer}
+        onOpenChange={(open) => {
+          if (!open) setPendingUnpinPeer(null);
+        }}
+        title="Unpin this user?"
+        description={
+          pendingUnpinPeer
+            ? `Remove ${pendingUnpinPeer.name} from your pinned peers list.`
+            : 'Remove this peer from your pinned peers list.'
+        }
+        confirmText="Unpin"
+        variant="destructive"
+        isProcessing={unpinMutation.isPending}
+        onConfirm={async () => {
+          if (!pendingUnpinPeer) return;
+          await unpinMutation.mutateAsync(pendingUnpinPeer.id);
+          setPendingUnpinPeer(null);
+        }}
+      />
 
       <div className="rounded-xl border border-border/60 bg-muted/20">
         <button

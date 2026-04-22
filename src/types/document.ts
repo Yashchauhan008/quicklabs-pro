@@ -52,6 +52,12 @@ export interface SubjectDocument {
   subject_name?: string | null;
   rating_avg?: number | null;
   rating_count?: number;
+  university_id?: string | null;
+  branch_id?: string | null;
+  batch_year?: number | null;
+  semester?: number | null;
+  university_name?: string | null;
+  branch_name?: string | null;
   created_at?: string;
   updated_at?: string;
   deleted_at?: string | null;

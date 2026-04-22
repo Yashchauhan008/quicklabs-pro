@@ -8,7 +8,7 @@ import {
 } from '@/schema/document';
 import { useUploadDocument } from '@/hooks/useDocuments';
 import { useGetSubject, useGetSubjects } from '@/hooks/useSubjects';
-import { ROUTES } from '@/config';
+import { IS_DEVELOPMENT, ROUTES } from '@/config';
 import { profileUrl } from '@/utils/profileUrls';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,7 @@ import {
   fileDedupeKey,
   mergeIntoFileList,
 } from '@/utils/stageUploadFiles';
+import { useGetUniversities } from '@/hooks/useAcademicMeta';
 
 const EMPTY_SUBJECTS: Subject[] = [];
 
@@ -79,10 +80,14 @@ export const DocumentUploadPage = () => {
       main_file_index: 0,
       file_titles: [],
       file_descriptions: [],
+      university_id: '',
+      batch_year: '',
+      semester: '',
     },
   });
 
   const files = useWatch({ control: form.control, name: 'files' });
+  const { data: universitiesData } = useGetUniversities({ page: 1, limit: 500 });
 
   useEffect(() => {
     if (!subjects.length) return;
@@ -140,6 +145,9 @@ export const DocumentUploadPage = () => {
     if (desc) fd.append('description', desc);
     fd.append('visibility', values.visibility);
     fd.append('kind', values.kind);
+    if (values.university_id) fd.append('university_id', values.university_id);
+    if (values.batch_year?.trim()) fd.append('batch_year', values.batch_year.trim());
+    if (values.semester?.trim()) fd.append('semester', values.semester.trim());
     fd.append('main_index', String(values.main_file_index));
     const perFileDesc = values.files.map((_, i) => {
       const t = values.file_descriptions?.[i]?.trim();
@@ -203,12 +211,21 @@ export const DocumentUploadPage = () => {
     return (
       <div className="max-w-2xl space-y-4">
         <h1 className="text-3xl font-bold tracking-tight">Upload materials</h1>
-        <p className="text-muted-foreground">
-          Create a course first, then you can attach materials to it.
-        </p>
-        <Button asChild className="rounded-lg">
-          <Link to={ROUTES.SUBJECT_CREATE}>New course</Link>
-        </Button>
+        {!IS_DEVELOPMENT ? (
+          <p className="text-muted-foreground">
+            No courses are available yet. Please contact your admin to create a
+            course before uploading materials.
+          </p>
+        ) : (
+          <>
+            <p className="text-muted-foreground">
+              Create a course first, then you can attach materials to it.
+            </p>
+            <Button asChild className="rounded-lg">
+              <Link to={ROUTES.SUBJECT_CREATE}>New course</Link>
+            </Button>
+          </>
+        )}
       </div>
     );
   }
@@ -233,7 +250,7 @@ export const DocumentUploadPage = () => {
         )}
       </div>
 
-      <Card className="border-0 shadow-md ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
+      <Card className="border-0 shadow-md ring-1 ring-black/4 dark:ring-white/6">
         <CardHeader>
           <CardTitle>Files & details</CardTitle>
           <CardDescription>
@@ -333,6 +350,42 @@ export const DocumentUploadPage = () => {
                   </Select>
                 )}
               />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-2 sm:col-span-1">
+                <Label>University (optional)</Label>
+                <Controller
+                  control={form.control}
+                  name="university_id"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value || 'none'}
+                      onValueChange={(value) => field.onChange(value === 'none' ? '' : value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select university" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {(universitiesData?.items ?? []).map((uni) => (
+                          <SelectItem key={uni.id} value={uni.id}>
+                            {uni.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-1">
+                <Label htmlFor="batch_year">Batch year (optional)</Label>
+                <Input id="batch_year" {...form.register('batch_year')} placeholder="2026" />
+              </div>
+              <div className="space-y-2 sm:col-span-1">
+                <Label htmlFor="semester">Semester (optional)</Label>
+                <Input id="semester" {...form.register('semester')} placeholder="1-12" />
+              </div>
             </div>
 
             <div className="space-y-2">

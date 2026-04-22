@@ -12,7 +12,14 @@ import { parseEntity, parsePaginatedList } from '@/utils/parseApiResponse';
 
 const BASE = '/api/students';
 
-export function patchStudentProfile(data: { social_profiles: SocialProfile[] }) {
+export function patchStudentProfile(data: {
+  social_profiles: SocialProfile[];
+  bio?: string | null;
+  batch_year?: number | null;
+  semester?: number | null;
+  university_id?: string | null;
+  branch_id?: string | null;
+}) {
   return axiosInstance({
     method: 'PATCH',
     url: `${BASE}/profile`,

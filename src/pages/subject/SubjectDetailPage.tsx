@@ -10,29 +10,20 @@ import { useGetSubject, useDeleteSubject } from '@/hooks/useSubjects';
 import { useGetDocuments } from '@/hooks/useDocuments';
 import { ROUTES } from '@/config';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   formatDateTime,
-  truncateText,
-  formatFileSize,
 } from '@/utils/formate';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { Pencil, Trash2, Plus, FileText, Library } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { DOCUMENT_KIND_LABELS, type SubjectDocument } from '@/types/document';
 import { useAuth } from '@/context/AuthContext';
 import { isStudentRole } from '@/utils/roles';
 import { cn } from '@/lib/utils';
-import {
-  subjectDocumentCardClass,
-  subjectDocumentIconClass,
-} from '@/utils/subjectAccent';
-import { Star } from 'lucide-react';
-import { PeerAttributionRow } from '@/components/shared/PeerAttributionRow';
 import { pickDocumentUploader } from '@/utils/displayUser';
 import { resolvePublicFileUrl } from '@/utils/publicFileUrl';
 import { UserAvatar } from '@/components/shared/UserAvatar';
+import { MaterialCard } from '@/components/shared/MaterialCard';
 
 type MaterialsTab = 'informational' | 'lab_solutions';
 
@@ -58,79 +49,6 @@ function computeTopContributor(docs: SubjectDocument[]) {
     if (!best || v.count > best.count) best = { key, ...v };
   }
   return best;
-}
-
-function SubjectDocumentCard({
-  doc: d,
-  fromExplore,
-  isStudent,
-}: {
-  doc: SubjectDocument;
-  fromExplore: boolean;
-  isStudent: boolean;
-}) {
-  const uploader = pickDocumentUploader(d);
-  const detailQs = fromExplore ? '?from=explore' : '';
-
-  return (
-    <Card
-      className={cn(
-        'h-full gap-0 rounded-xl border-0 py-0 shadow-md transition-shadow hover:shadow-lg',
-        subjectDocumentCardClass(d.subject_id),
-      )}
-    >
-      <CardContent className="flex flex-col p-3.5 pt-3">
-        <Link
-          to={`${generatePath(ROUTES.DOCUMENT_DETAILS, { id: d.id })}${detailQs}`}
-          className="group -m-3.5 mb-0 rounded-t-xl p-3.5 pb-0 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <div className="mb-2 flex items-start justify-between gap-2">
-            <div
-              className={cn(
-                'flex h-8 w-8 shrink-0 items-center justify-center',
-                subjectDocumentIconClass(d.subject_id),
-              )}
-            >
-              <FileText className="h-4 w-4 opacity-90" />
-            </div>
-            <Badge variant="secondary" className="shrink-0 font-mono text-[10px]">
-              {d.visibility}
-            </Badge>
-          </div>
-          <h3 className="line-clamp-2 text-base font-semibold leading-snug group-hover:text-primary">
-            {d.title}
-          </h3>
-          {d.description ? (
-            <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-              {truncateText(d.description, 90)}
-            </p>
-          ) : null}
-          <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-muted-foreground">
-            {d.file_count != null && d.file_count > 1 ? (
-              <span>{d.file_count} files</span>
-            ) : null}
-            {d.file_size != null ? (
-              <span>{formatFileSize(d.file_size)}</span>
-            ) : null}
-            {isStudent &&
-            d.rating_count != null &&
-            d.rating_count > 0 ? (
-              <span className="inline-flex items-center gap-1">
-                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                {Number(d.rating_avg ?? 0).toFixed(1)} ({d.rating_count})
-              </span>
-            ) : null}
-          </div>
-        </Link>
-        <PeerAttributionRow
-          label="Uploaded by"
-          userId={uploader.id}
-          displayName={uploader.label}
-          profilePictureUrl={uploader.profilePictureUrl}
-        />
-      </CardContent>
-    </Card>
-  );
 }
 
 export const SubjectDetailPage = () => {
@@ -457,11 +375,12 @@ export const SubjectDetailPage = () => {
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {tabDocs.map((d) => (
-                    <SubjectDocumentCard
+                    <MaterialCard
                       key={d.id}
-                      doc={d}
-                      fromExplore={fromExplore}
+                      document={d}
+                      href={`${generatePath(ROUTES.DOCUMENT_DETAILS, { id: d.id })}${fromExplore ? '?from=explore' : ''}`}
                       isStudent={isStudent}
+                      showVisibility
                     />
                   ))}
                 </div>

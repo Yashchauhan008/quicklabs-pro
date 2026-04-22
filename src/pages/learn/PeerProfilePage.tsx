@@ -23,16 +23,17 @@ import { StarPicker } from '@/components/shared/StarPicker';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { InstagramProfileLayout } from '@/components/profile/InstagramProfileLayout';
 import type { ProfileTab } from '@/utils/profileUrls';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 
 export const PeerProfilePage = () => {
   const { peerId } = useParams<{ peerId: string }>();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab: ProfileTab =
-    searchParams.get('tab') === 'documents' ? 'documents' : 'subjects';
+    searchParams.get('tab') === 'subjects' ? 'subjects' : 'documents';
 
   const setTab = (t: ProfileTab) => {
-    if (t === 'documents') setSearchParams({ tab: 'documents' });
+    if (t === 'subjects') setSearchParams({ tab: 'subjects' });
     else setSearchParams({});
   };
 
@@ -42,6 +43,7 @@ export const PeerProfilePage = () => {
   const pinMutation = usePinPeer();
   const unpinMutation = useUnpinPeer();
   const [stars, setStars] = useState(0);
+  const [unpinConfirmOpen, setUnpinConfirmOpen] = useState(false);
 
   const isStudent = isStudentRole(user?.role);
   const isSelf = !!user?.id && user.id === peerId;
@@ -79,6 +81,11 @@ export const PeerProfilePage = () => {
     );
   }
 
+  const hasRatedThisPeer =
+    peer.my_rating_stars != null &&
+    peer.my_rating_stars >= 1 &&
+    peer.my_rating_stars <= 5;
+
   const headerActions =
     isStudent && !isSelf && peerId ? (
       isPinned ? (
@@ -88,7 +95,7 @@ export const PeerProfilePage = () => {
           size="sm"
           className="rounded-lg"
           disabled={pinBusy}
-          onClick={() => unpinMutation.mutate(peerId)}
+          onClick={() => setUnpinConfirmOpen(true)}
         >
           <BookmarkCheck className="mr-2 h-4 w-4" />
           {pinBusy ? 'Updating…' : 'Unpin'}
@@ -121,15 +128,37 @@ export const PeerProfilePage = () => {
         name={peer.name}
         profilePictureUrl={peer.profile_picture_url}
         socialProfiles={peer.social_profiles}
+        bio={peer.bio}
+        batchYear={peer.batch_year}
+        semester={peer.semester}
+        universityName={peer.university_name}
+        universityLogoUrl={peer.university_logo_url}
+        branchName={peer.branch_name}
+        createdAt={peer.created_at}
         ratingAvg={peer.rating_avg}
         ratingCount={peer.rating_count}
+        totalCourses={peer.total_courses}
+        totalMaterials={peer.total_files}
         tab={tab}
         onTabChange={setTab}
         headerActions={headerActions}
       />
+      <ConfirmationModal
+        open={unpinConfirmOpen}
+        onOpenChange={setUnpinConfirmOpen}
+        title="Unpin this user?"
+        description="This peer will be removed from your pinned list."
+        confirmText="Unpin"
+        variant="destructive"
+        isProcessing={pinBusy}
+        onConfirm={async () => {
+          await unpinMutation.mutateAsync(peerId);
+          setUnpinConfirmOpen(false);
+        }}
+      />
 
-      {canRatePeer ? (
-        <Card className="mx-auto max-w-3xl border-0 shadow-md ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
+      {canRatePeer && !hasRatedThisPeer ? (
+        <Card className="mx-auto max-w-3xl border-0 shadow-md ring-1 ring-black/4 dark:ring-white/6">
           <CardHeader>
             <CardTitle className="text-lg">Rate this student</CardTitle>
             <CardDescription>

@@ -5,6 +5,10 @@ export const serverDetails = {
 export const googleConfig = {
   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
 };
+
+export const IS_DEVELOPMENT = import.meta.env.VITE_APP_ENV === 'development';
+export const PRIVATE_STATIC_ACCESS_TOKEN =
+  import.meta.env.VITE_PRIVATE_STATIC_ACCESS_TOKEN || '';
   
   export const PERMISSIONS_CONFIG = {
     // Dashboard
@@ -41,6 +45,7 @@ export const googleConfig = {
     // Authenticated app (learning platform)
     DASHBOARD: '/learn/dashboard',
     PROFILE: '/learn/profile',
+    PROFILE_EDIT: '/learn/profile/edit',
     SETTINGS: '/learn/settings',
     UNAUTHORIZED: '/learn/unauthorized',
     
