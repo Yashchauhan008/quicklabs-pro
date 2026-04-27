@@ -5,15 +5,12 @@ import {
   createUniversity,
   deleteBranch,
   deleteUniversity,
+  getBranchesSimple,
   getBranches,
   getUniversities,
   updateBranch,
   updateUniversity,
 } from '@/services/api/meta';
-import { IS_DEVELOPMENT, PRIVATE_STATIC_ACCESS_TOKEN } from '@/config';
-
-const canUseMetaApi =
-  IS_DEVELOPMENT && PRIVATE_STATIC_ACCESS_TOKEN.trim().length >= 16;
 
 export const academicMetaKeys = {
   all: ['academic-meta'] as const,
@@ -27,7 +24,6 @@ export function useGetUniversities(params?: { page?: number; limit?: number; sea
   return useQuery({
     queryKey: [...academicMetaKeys.universities(), params],
     queryFn: () => getUniversities(params),
-    enabled: canUseMetaApi,
     retry: false,
   });
 }
@@ -40,7 +36,14 @@ export function useGetBranches(params?: {
   return useQuery({
     queryKey: [...academicMetaKeys.branches(), params],
     queryFn: () => getBranches(params),
-    enabled: canUseMetaApi,
+    retry: false,
+  });
+}
+
+export function useGetAllBranches() {
+  return useQuery({
+    queryKey: [...academicMetaKeys.branches(), 'all'],
+    queryFn: getBranchesSimple,
     retry: false,
   });
 }

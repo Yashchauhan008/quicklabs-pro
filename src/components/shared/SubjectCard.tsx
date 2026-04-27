@@ -1,19 +1,17 @@
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { PeerAttributionRow } from '@/components/shared/PeerAttributionRow';
 import { type Subject } from '@/types/subject';
 import { cn } from '@/lib/utils';
 import { truncateText } from '@/utils/formate';
 import { resolvePublicFileUrl } from '@/utils/publicFileUrl';
-import { pickSubjectCreator } from '@/utils/displayUser';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Download } from 'lucide-react';
 
 type SubjectCardProps = {
   subject: Subject;
   href: string;
   compact?: boolean;
-  showCreator?: boolean;
+  showStats?: boolean;
   className?: string;
 };
 
@@ -21,11 +19,12 @@ export function SubjectCard({
   subject,
   href,
   compact = false,
-  showCreator = true,
+  showStats = false,
   className,
 }: SubjectCardProps) {
-  const creator = pickSubjectCreator(subject);
   const subjectImageSrc = resolvePublicFileUrl(subject.banner_url);
+  const documentCount = subject.document_count ?? 0;
+  const totalDownloadCount = subject.total_download_count ?? 0;
 
   if (compact) {
     return (
@@ -44,9 +43,6 @@ export function SubjectCard({
             <p className="line-clamp-2 text-left text-xs font-semibold leading-snug group-hover:text-primary">
               {subject.name}
             </p>
-            <Badge variant="outline" className="w-fit px-1 py-0 text-[9px]">
-              Course
-            </Badge>
           </div>
         </div>
       </Link>
@@ -83,25 +79,26 @@ export function SubjectCard({
               <h2 className="line-clamp-2 text-base font-semibold leading-snug group-hover:text-primary">
                 {subject.name}
               </h2>
-              <div className="mt-1.5">
-                <Badge variant="secondary" className="rounded-md px-2 py-0 text-[10px]">
-                  Course
-                </Badge>
-              </div>
               <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                 {subject.description ? truncateText(subject.description, 120) : 'No description.'}
               </p>
             </div>
           </div>
         </Link>
-        {showCreator ? (
-          <PeerAttributionRow
-            label="Created by"
-            userId={creator.id}
-            displayName={creator.label}
-            profilePictureUrl={creator.profilePictureUrl}
-            className="border-border/60 pt-2.5"
-          />
+        {showStats ? (
+          <div className="mt-2.5 border-t border-border/60 pt-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="rounded-md px-2 py-0 text-[10px]">
+                <BookOpen className="mr-1 h-3 w-3" />
+                {documentCount} {documentCount === 1 ? 'material' : 'materials'}
+              </Badge>
+              <Badge variant="outline" className="rounded-md px-2 py-0 text-[10px]">
+                <Download className="mr-1 h-3 w-3" />
+                {totalDownloadCount}{' '}
+                {totalDownloadCount === 1 ? 'download' : 'downloads'}
+              </Badge>
+            </div>
+          </div>
         ) : null}
       </CardContent>
     </Card>

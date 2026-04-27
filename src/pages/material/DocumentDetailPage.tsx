@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Link,
@@ -58,7 +58,7 @@ import { useRateDocument } from '@/hooks/useStudentFeatures';
 import { cn } from '@/lib/utils';
 import { fileDedupeKey, mergeIntoFileList } from '@/utils/stageUploadFiles';
 import { toast } from 'react-hot-toast';
-import { useGetUniversities } from '@/hooks/useAcademicMeta';
+import { useGetBranches, useGetUniversities } from '@/hooks/useAcademicMeta';
 
 function MetaRow({
   label,
@@ -168,11 +168,18 @@ export const DocumentDetailPage = () => {
       visibility: 'PRIVATE',
       kind: 'informational',
       university_id: '',
-      batch_year: '',
+      branch_id: '',
       semester: '',
     },
   });
   const { data: universitiesData } = useGetUniversities({ page: 1, limit: 500 });
+  const { data: branchesData } = useGetBranches({ page: 1, limit: 500 });
+  const universityId = useWatch({ control: form.control, name: 'university_id' });
+  const availableBranches = useMemo(() => {
+    const allBranches = branchesData?.items ?? [];
+    if (!universityId) return allBranches;
+    return allBranches.filter((branch) => branch.university_id === universityId);
+  }, [branchesData?.items, universityId]);
 
   useEffect(() => {
     if (doc) {
@@ -182,11 +189,20 @@ export const DocumentDetailPage = () => {
         visibility: doc.visibility,
         kind: doc.kind ?? 'informational',
         university_id: doc.university_id ?? '',
-        batch_year: doc.batch_year != null ? String(doc.batch_year) : '',
+        branch_id: doc.branch_id ?? '',
         semester: doc.semester != null ? String(doc.semester) : '',
       });
     }
   }, [doc, form]);
+
+  useEffect(() => {
+    const currentBranchId = form.getValues('branch_id');
+    if (!currentBranchId) return;
+    const stillValid = availableBranches.some((branch) => branch.id === currentBranchId);
+    if (!stillValid) {
+      form.setValue('branch_id', '');
+    }
+  }, [availableBranches, form]);
 
   const onSaveMetadata = async (values: DocumentUpdateFormValues) => {
     if (!id) return;
@@ -196,7 +212,7 @@ export const DocumentDetailPage = () => {
       visibility: values.visibility,
       kind: values.kind,
       university_id: values.university_id || null,
-      batch_year: values.batch_year?.trim() ? Number(values.batch_year.trim()) : null,
+      branch_id: values.branch_id || null,
       semester: values.semester?.trim() ? Number(values.semester.trim()) : null,
     });
   };
@@ -577,7 +593,7 @@ export const DocumentDetailPage = () => {
             {doc.university_name ? (
               <MetaRow label="University">{doc.university_name}</MetaRow>
             ) : null}
-            {doc.batch_year ? <MetaRow label="Batch">{doc.batch_year}</MetaRow> : null}
+            {doc.branch_name ? <MetaRow label="Branch">{doc.branch_name}</MetaRow> : null}
             {doc.semester ? <MetaRow label="Semester">{doc.semester}</MetaRow> : null}
           </dl>
         </section>
@@ -706,6 +722,7 @@ export const DocumentDetailPage = () => {
                           value={field.value || 'none'}
                           onValueChange={(value) => {
                             field.onChange(value === 'none' ? '' : value);
+                            form.setValue('branch_id', '');
                           }}
                         >
                           <SelectTrigger className="w-full">
@@ -724,8 +741,29 @@ export const DocumentDetailPage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="batch_year">Batch year</Label>
-                    <Input id="batch_year" {...form.register('batch_year')} placeholder="2026" />
+                    <Label>Branch</Label>
+                    <Controller
+                      control={form.control}
+                      name="branch_id"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value || 'none'}
+                          onValueChange={(value) => field.onChange(value === 'none' ? '' : value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select branch" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {availableBranches.map((branch) => (
+                              <SelectItem key={branch.id} value={branch.id}>
+                                {branch.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="semester">Semester</Label>

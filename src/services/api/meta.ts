@@ -3,23 +3,44 @@ import { PRIVATE_STATIC_ACCESS_TOKEN } from '@/config';
 import type { Branch, University } from '@/types/academic';
 import { parsePaginatedList } from '@/utils/parseApiResponse';
 
-const metaHeaders = PRIVATE_STATIC_ACCESS_TOKEN
+const metaWriteHeaders = PRIVATE_STATIC_ACCESS_TOKEN
   ? {
       Authorization: `Bearer ${PRIVATE_STATIC_ACCESS_TOKEN}`,
       'X-Skip-Forbidden-Toast': '1',
     }
   : undefined;
 
+async function getMetaListWithFallback<T>(
+  url: string,
+  params: { page: number; limit: number; search?: string },
+) {
+  try {
+    const body = await axiosInstance({
+      method: 'GET',
+      url,
+      params,
+    });
+    return parsePaginatedList<T>(body, { page: params.page, limit: params.limit });
+  } catch (err) {
+    if (!metaWriteHeaders) throw err;
+    const body = await axiosInstance({
+      method: 'GET',
+      url,
+      params,
+      headers: metaWriteHeaders,
+    });
+    return parsePaginatedList<T>(body, { page: params.page, limit: params.limit });
+  }
+}
+
 export async function getUniversities(params?: { page?: number; limit?: number; search?: string }) {
   const page = params?.page ?? 1;
   const limit = params?.limit ?? 50;
-  const body = await axiosInstance({
-    method: 'GET',
-    url: '/api/meta/universities',
-    params: { ...params, page, limit },
-    headers: metaHeaders,
+  return getMetaListWithFallback<University>('/api/meta/universities', {
+    ...params,
+    page,
+    limit,
   });
-  return parsePaginatedList<University>(body, { page, limit });
 }
 
 export function createUniversity(data: FormData) {
@@ -27,7 +48,7 @@ export function createUniversity(data: FormData) {
     method: 'POST',
     url: '/api/meta/universities',
     data,
-    headers: metaHeaders,
+    headers: metaWriteHeaders,
   });
 }
 
@@ -38,7 +59,7 @@ export function updateUniversity(id: string, data: { name: string }) {
     method: 'PUT',
     url: `/api/meta/universities/${id}`,
     data: payload,
-    headers: metaHeaders,
+    headers: metaWriteHeaders,
   });
 }
 
@@ -46,7 +67,7 @@ export function deleteUniversity(id: string) {
   return axiosInstance({
     method: 'DELETE',
     url: `/api/meta/universities/${id}`,
-    headers: metaHeaders,
+    headers: metaWriteHeaders,
   });
 }
 
@@ -57,13 +78,11 @@ export async function getBranches(params?: {
 }) {
   const page = params?.page ?? 1;
   const limit = params?.limit ?? 100;
-  const body = await axiosInstance({
-    method: 'GET',
-    url: '/api/meta/branches',
-    params: { ...params, page, limit },
-    headers: metaHeaders,
+  return getMetaListWithFallback<Branch>('/api/meta/branches', {
+    ...params,
+    page,
+    limit,
   });
-  return parsePaginatedList<Branch>(body, { page, limit });
 }
 
 export function createBranch(data: { name: string }) {
@@ -71,7 +90,7 @@ export function createBranch(data: { name: string }) {
     method: 'POST',
     url: '/api/meta/branches',
     data,
-    headers: metaHeaders,
+    headers: metaWriteHeaders,
   });
 }
 
@@ -80,7 +99,7 @@ export function updateBranch(id: string, data: { name: string }) {
     method: 'PUT',
     url: `/api/meta/branches/${id}`,
     data,
-    headers: metaHeaders,
+    headers: metaWriteHeaders,
   });
 }
 
@@ -88,7 +107,7 @@ export function deleteBranch(id: string) {
   return axiosInstance({
     method: 'DELETE',
     url: `/api/meta/branches/${id}`,
-    headers: metaHeaders,
+    headers: metaWriteHeaders,
   });
 }
 
@@ -98,9 +117,26 @@ export async function getUniversitiesSimple() {
 }
 
 export async function getBranchesSimple() {
-  const response = await getBranches({
+  const PAGE_LIMIT = 200;
+  const firstPage = await getBranches({
     page: 1,
-    limit: 500,
+    limit: PAGE_LIMIT,
   });
-  return response.items;
+
+  const allItems = [...firstPage.items];
+  const totalPages = firstPage.meta?.totalPages ?? 1;
+
+  if (totalPages <= 1) {
+    return allItems;
+  }
+
+  for (let page = 2; page <= totalPages; page += 1) {
+    const pageData = await getBranches({
+      page,
+      limit: PAGE_LIMIT,
+    });
+    allItems.push(...pageData.items);
+  }
+
+  return allItems;
 }

@@ -39,6 +39,7 @@ export type UpdateDocumentBody = {
   visibility: string;
   kind: string;
   university_id?: string | null;
+  branch_id?: string | null;
   batch_year?: number | null;
   semester?: number | null;
 };

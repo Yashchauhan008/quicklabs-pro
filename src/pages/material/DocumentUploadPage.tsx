@@ -40,7 +40,7 @@ import {
   fileDedupeKey,
   mergeIntoFileList,
 } from '@/utils/stageUploadFiles';
-import { useGetUniversities } from '@/hooks/useAcademicMeta';
+import { useGetAllBranches, useGetUniversities } from '@/hooks/useAcademicMeta';
 
 const EMPTY_SUBJECTS: Subject[] = [];
 
@@ -81,13 +81,19 @@ export const DocumentUploadPage = () => {
       file_titles: [],
       file_descriptions: [],
       university_id: '',
-      batch_year: '',
+      branch_id: '',
       semester: '',
     },
   });
 
   const files = useWatch({ control: form.control, name: 'files' });
+  const universityId = useWatch({ control: form.control, name: 'university_id' });
   const { data: universitiesData } = useGetUniversities({ page: 1, limit: 500 });
+  const { data: allBranches = [] } = useGetAllBranches();
+  const availableBranches = useMemo(() => {
+    if (!universityId) return allBranches;
+    return allBranches.filter((branch) => branch.university_id === universityId);
+  }, [allBranches, universityId]);
 
   useEffect(() => {
     if (!subjects.length) return;
@@ -134,6 +140,15 @@ export const DocumentUploadPage = () => {
     }
   }, [files, form]);
 
+  useEffect(() => {
+    const currentBranchId = form.getValues('branch_id');
+    if (!currentBranchId) return;
+    const stillValid = availableBranches.some((branch) => branch.id === currentBranchId);
+    if (!stillValid) {
+      form.setValue('branch_id', '');
+    }
+  }, [availableBranches, form]);
+
   const onSubmit = async (values: DocumentUploadFormValues) => {
     const fd = new FormData();
     for (const f of values.files) {
@@ -146,7 +161,7 @@ export const DocumentUploadPage = () => {
     fd.append('visibility', values.visibility);
     fd.append('kind', values.kind);
     if (values.university_id) fd.append('university_id', values.university_id);
-    if (values.batch_year?.trim()) fd.append('batch_year', values.batch_year.trim());
+    if (values.branch_id) fd.append('branch_id', values.branch_id);
     if (values.semester?.trim()) fd.append('semester', values.semester.trim());
     fd.append('main_index', String(values.main_file_index));
     const perFileDesc = values.files.map((_, i) => {
@@ -361,7 +376,10 @@ export const DocumentUploadPage = () => {
                   render={({ field }) => (
                     <Select
                       value={field.value || 'none'}
-                      onValueChange={(value) => field.onChange(value === 'none' ? '' : value)}
+                      onValueChange={(value) => {
+                        field.onChange(value === 'none' ? '' : value);
+                        form.setValue('branch_id', '');
+                      }}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select university" />
@@ -379,8 +397,29 @@ export const DocumentUploadPage = () => {
                 />
               </div>
               <div className="space-y-2 sm:col-span-1">
-                <Label htmlFor="batch_year">Batch year (optional)</Label>
-                <Input id="batch_year" {...form.register('batch_year')} placeholder="2026" />
+                <Label>Branch (optional)</Label>
+                <Controller
+                  control={form.control}
+                  name="branch_id"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value || 'none'}
+                      onValueChange={(value) => field.onChange(value === 'none' ? '' : value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {availableBranches.map((branch) => (
+                          <SelectItem key={branch.id} value={branch.id}>
+                            {branch.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2 sm:col-span-1">
                 <Label htmlFor="semester">Semester (optional)</Label>

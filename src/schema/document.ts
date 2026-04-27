@@ -25,7 +25,7 @@ export const documentUploadSchema = z
     visibility: visibilitySchema,
     kind: documentKindSchema,
     university_id: z.string().uuid().optional().or(z.literal('')),
-    batch_year: z.string().optional(),
+    branch_id: z.string().uuid().optional().or(z.literal('')),
     semester: z.string().optional(),
     files: z
       .array(fileItemSchema)
@@ -78,7 +78,7 @@ export const documentUpdateSchema = z.object({
   visibility: visibilitySchema,
   kind: documentKindSchema,
   university_id: z.string().uuid().optional().or(z.literal('')),
-  batch_year: z.string().optional(),
+  branch_id: z.string().uuid().optional().or(z.literal('')),
   semester: z.string().optional(),
 });
 

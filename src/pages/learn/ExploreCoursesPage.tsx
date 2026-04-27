@@ -11,22 +11,22 @@ import { Globe2, Plus } from 'lucide-react';
 import { SubjectCard } from '@/components/shared/SubjectCard';
 
 export const ExploreCoursesPage = () => {
-  const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
 
   const listParams = useMemo(
     () => ({
-      page,
-      limit: 12,
+      page: 1,
+      limit: 1000,
       search: debouncedSearch || undefined,
     }),
-    [page, debouncedSearch],
+    [debouncedSearch],
   );
 
   const { data, isLoading, isFetching } = useGetSubjects(listParams);
   const items = data?.items ?? [];
   const meta = data?.meta;
+  const totalSubjects = meta?.total ?? items.length;
 
   return (
     <div className="space-y-6">
@@ -62,7 +62,6 @@ export const ExploreCoursesPage = () => {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setPage(1);
             }}
             className="rounded-lg"
           />
@@ -75,54 +74,35 @@ export const ExploreCoursesPage = () => {
             <Skeleton key={i} className="h-36 rounded-xl" />
           ))}
         </div>
-      ) : items.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            No courses match your search.
-          </CardContent>
-        </Card>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((s) => {
-              return (
-                <SubjectCard
-                  key={s.id}
-                  subject={s}
-                  href={`${generatePath(ROUTES.SUBJECT_DETAILS, { id: s.id })}?from=explore`}
-                />
-              );
-            })}
-          </div>
-
-          {meta && meta.totalPages > 1 && (
-            <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-6">
-              <p className="text-sm text-muted-foreground">
-                Page {meta.page} of {meta.totalPages} ({meta.total} courses)
-                {isFetching ? ' · Updating…' : ''}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= meta.totalPages}
-                  onClick={() =>
-                    setPage((p) => Math.min(meta.totalPages, p + 1))
-                  }
-                >
-                  Next
-                </Button>
-              </div>
+          {items.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-12 text-center text-sm text-muted-foreground">
+                No courses match your search.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map((s) => {
+                return (
+                  <SubjectCard
+                    key={s.id}
+                    subject={s}
+                    href={`${generatePath(ROUTES.SUBJECT_DETAILS, { id: s.id })}?from=explore`}
+                    showStats
+                  />
+                );
+              })}
             </div>
           )}
+
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-6">
+            <p className="text-sm text-muted-foreground">
+              {totalSubjects} {totalSubjects === 1 ? 'subject' : 'subjects'}
+              {isFetching ? ' · Updating…' : ''}
+            </p>
+          </div>
         </>
       )}
     </div>

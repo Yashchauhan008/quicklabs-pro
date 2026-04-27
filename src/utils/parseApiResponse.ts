@@ -45,7 +45,7 @@ export function parsePaginatedList<T>(
   }
   const o = body as Record<string, unknown>;
   const meta: PaginationMeta = normalizeMeta(
-    o.meta as Record<string, unknown> | undefined,
+    (o.meta ?? o.pagination) as Record<string, unknown> | undefined,
     params.page,
     params.limit,
   );
