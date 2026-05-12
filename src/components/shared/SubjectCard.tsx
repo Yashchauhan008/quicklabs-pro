@@ -5,13 +5,16 @@ import { type Subject } from '@/types/subject';
 import { cn } from '@/lib/utils';
 import { truncateText } from '@/utils/formate';
 import { resolvePublicFileUrl } from '@/utils/publicFileUrl';
-import { BookOpen, Download } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Download } from 'lucide-react';
 
 type SubjectCardProps = {
   subject: Subject;
   href: string;
   compact?: boolean;
+  /** kept for backwards compatibility */
+  showCreator?: boolean;
   showStats?: boolean;
+  variant?: 'default' | 'explore';
   className?: string;
 };
 
@@ -20,6 +23,7 @@ export function SubjectCard({
   href,
   compact = false,
   showStats = false,
+  variant = 'default',
   className,
 }: SubjectCardProps) {
   const subjectImageSrc = resolvePublicFileUrl(subject.banner_url);
@@ -44,6 +48,64 @@ export function SubjectCard({
               {subject.name}
             </p>
           </div>
+        </div>
+      </Link>
+    );
+  }
+
+  if (variant === 'explore') {
+    return (
+      <Link
+        to={href}
+        className={cn(
+          'group block h-full rounded-2xl border border-border/60 bg-card p-3 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:border-primary/35 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          className,
+        )}
+      >
+        <div className="relative mb-3 overflow-hidden rounded-xl border border-border/50 bg-muted/40">
+          {subjectImageSrc ? (
+            <img
+              src={subjectImageSrc}
+              alt={`${subject.name} course`}
+              className="h-36 w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            />
+          ) : (
+            <div className="flex h-36 w-full items-center justify-center bg-linear-to-br from-indigo-50 to-violet-100 text-primary dark:from-indigo-950/30 dark:to-violet-900/20">
+              <BookOpen className="h-8 w-8" />
+            </div>
+          )}
+          <Badge className="absolute left-2.5 top-2.5 rounded-md bg-background/90 text-[10px] text-foreground shadow-sm">
+            Course
+          </Badge>
+          <span className="absolute right-2.5 top-2.5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm transition group-hover:text-primary">
+            <ArrowUpRight className="h-4 w-4" />
+          </span>
+        </div>
+
+        <div className="space-y-2.5">
+          <h2 className="line-clamp-2 text-base font-semibold leading-snug group-hover:text-primary">
+            {subject.name}
+          </h2>
+          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+            {subject.description ? truncateText(subject.description, 110) : 'No description yet.'}
+          </p>
+
+          {showStats ? (
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="rounded-lg border border-border/60 bg-muted/35 px-2.5 py-2">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Materials
+                </p>
+                <p className="mt-1 text-sm font-semibold">{documentCount}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-muted/35 px-2.5 py-2">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Downloads
+                </p>
+                <p className="mt-1 text-sm font-semibold">{totalDownloadCount}</p>
+              </div>
+            </div>
+          ) : null}
         </div>
       </Link>
     );

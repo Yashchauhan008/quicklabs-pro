@@ -91,6 +91,7 @@ export const ExploreCoursesPage = () => {
                     subject={s}
                     href={`${generatePath(ROUTES.SUBJECT_DETAILS, { id: s.id })}?from=explore`}
                     showStats
+                    variant="explore"
                   />
                 );
               })}

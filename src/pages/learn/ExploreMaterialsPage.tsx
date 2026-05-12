@@ -107,6 +107,8 @@ export const ExploreMaterialsPage = () => {
                   href={`${generatePath(ROUTES.DOCUMENT_DETAILS, { id: d.id })}?from=explore`}
                   courseName={courseName}
                   isStudent={isStudent}
+                  showUploader={false}
+                  variant="explore"
                 />
               );
             })}

@@ -9,7 +9,6 @@ import {
   listEnquiries,
   patchStudentProfile,
   pinPeer,
-  rateDocument,
   ratePeerStudent,
   unpinPeer,
   uploadStudentProfilePicture,
@@ -17,7 +16,6 @@ import {
 } from '@/services/api/students';
 import type { CreateEnquiryData, EnquiryListParams } from '@/types/student';
 import type { SocialProfile } from '@/types/student';
-import { documentKeys } from '@/hooks/useDocuments';
 import { getApiErrorMessage } from '@/utils/apiError';
 import { isStudentRole } from '@/utils/roles';
 
@@ -98,23 +96,6 @@ export function useDeleteStudentProfilePicture() {
     },
     onError: (err: unknown) => {
       toast.error(getApiErrorMessage(err) || 'Could not remove photo');
-    },
-  });
-}
-
-export function useRateDocument(documentId: string | undefined) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (stars: number) =>
-      rateDocument(documentId!, { stars }),
-    onSuccess: () => {
-      if (documentId) {
-        queryClient.invalidateQueries({
-          queryKey: documentKeys.detail(documentId),
-        });
-        queryClient.invalidateQueries({ queryKey: documentKeys.lists() });
-      }
-      toast.success('Thanks for your rating');
     },
   });
 }

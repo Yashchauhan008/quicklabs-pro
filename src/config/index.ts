@@ -52,10 +52,10 @@ export const PRIVATE_STATIC_ACCESS_TOKEN =
     EXPLORE_COURSES: '/learn/courses',
     EXPLORE_MATERIALS: '/learn/materials',
 
-    SUBJECTS: '/learn/subject',
-    SUBJECT_CREATE: '/learn/subject/create',
-    SUBJECT_DETAILS: '/learn/subject/:id',
-    SUBJECT_EDIT: '/learn/subject/:id/edit',
+    SUBJECTS: '/learn/courses',
+    SUBJECT_CREATE: '/learn/course/create',
+    SUBJECT_DETAILS: '/learn/course/:id',
+    SUBJECT_EDIT: '/learn/course/:id/edit',
     
     DOCUMENT_DETAILS: '/learn/document/:id',
     ADD_DOCUMENT: '/learn/document/add',

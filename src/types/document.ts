@@ -50,8 +50,6 @@ export interface SubjectDocument {
   uploaded_by_name?: string | null;
   uploaded_by_profile_picture_url?: string | null;
   subject_name?: string | null;
-  rating_avg?: number | null;
-  rating_count?: number;
   university_id?: string | null;
   branch_id?: string | null;
   batch_year?: number | null;

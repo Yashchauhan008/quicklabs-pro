@@ -42,14 +42,6 @@ export function deleteStudentProfilePicture() {
   });
 }
 
-export function rateDocument(documentId: string, body: { stars: number }) {
-  return axiosInstance({
-    method: 'POST',
-    url: `${BASE}/ratings/documents/${documentId}`,
-    data: body,
-  });
-}
-
 export function ratePeerStudent(peerId: string, body: { stars: number }) {
   return axiosInstance({
     method: 'POST',

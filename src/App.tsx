@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/context/theme-provider';
 import { LearningLayout } from '@/components/user/LearningLayout';
 import { Login } from '@/pages/Login';
 import { NotFound } from '@/pages/NotFound';
+import LandingPage from '@/pages/LandingPage';
 import { Dashboard } from '@/components/user/Dashboard';
 import { Profile } from '@/components/user/Profile';
 import { ProfileEditPage } from '@/pages/profile/ProfileEditPage';
@@ -69,7 +70,7 @@ function App() {
               <Route path="courses" element={<ExploreCoursesPage />} />
               <Route path="materials" element={<ExploreMaterialsPage />} />
               <Route
-                path="subject/create"
+                path="course/create"
                 element={
                   !IS_DEVELOPMENT ? (
                     <Navigate to={ROUTES.EXPLORE_COURSES} replace />
@@ -78,14 +79,15 @@ function App() {
                   )
                 }
               />
-              <Route path="subject/:id/edit" element={<SubjectFormPage />} />
-              <Route path="subject/:id" element={<SubjectDetailPage />} />
+              <Route path="course/:id/edit" element={<SubjectFormPage />} />
+              <Route path="course/:id" element={<SubjectDetailPage />} />
               <Route path="document/add" element={<DocumentUploadPage />} />
               <Route path="document/:id" element={<DocumentDetailPage />} />
+              <Route path="documents" element={<Navigate to={ROUTES.EXPLORE_MATERIALS} replace />} />
               <Route
                 path="document"
                 element={
-                  <Navigate to={`${ROUTES.PROFILE}?tab=documents`} replace />
+                  <Navigate to={ROUTES.EXPLORE_MATERIALS} replace />
                 }
               />
               <Route path="enquiries/new" element={<EnquiryCreatePage />} />
@@ -100,7 +102,7 @@ function App() {
               <Route path="unauthorized" element={<Unauthorized />} />
             </Route>
 
-            <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

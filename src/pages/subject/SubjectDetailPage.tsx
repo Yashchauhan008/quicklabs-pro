@@ -113,7 +113,7 @@ export const SubjectDetailPage = () => {
     );
   }
 
-  const subjectOwnerId = subject.creator_id ?? subject.created_by;
+  const subjectOwnerId = subject.created_by;
   const isOwner =
     !!user?.id &&
     !!subjectOwnerId &&

@@ -32,6 +32,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -41,7 +48,7 @@ import {
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { DocumentPreviewPanel } from '@/components/shared/DocumentPreviewPanel';
 import { formatDateTime, formatFileSize } from '@/utils/formate';
-import { Download, Trash2, FileText, Star, X } from 'lucide-react';
+import { Download, Files, FileText, Pencil, Trash2, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { DOCUMENT_KIND_LABELS, type DocumentAttachment } from '@/types/document';
@@ -53,12 +60,10 @@ import {
   attachmentDisplayTitle,
   getAttachmentPreviewMode,
 } from '@/utils/documentPreview';
-import { StarPicker } from '@/components/shared/StarPicker';
-import { useRateDocument } from '@/hooks/useStudentFeatures';
 import { cn } from '@/lib/utils';
 import { fileDedupeKey, mergeIntoFileList } from '@/utils/stageUploadFiles';
 import { toast } from 'react-hot-toast';
-import { useGetBranches, useGetUniversities } from '@/hooks/useAcademicMeta';
+import { useGetAllBranches, useGetUniversities } from '@/hooks/useAcademicMeta';
 
 function MetaRow({
   label,
@@ -90,6 +95,8 @@ export const DocumentDetailPage = () => {
   const fromExplore = searchParams.get('from') === 'explore';
   const [softDeleteOpen, setSoftDeleteOpen] = useState(false);
   const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [manageFilesDialogOpen, setManageFilesDialogOpen] = useState(false);
   const [activeAttachmentId, setActiveAttachmentId] = useState<string | null>(
     null,
   );
@@ -101,17 +108,18 @@ export const DocumentDetailPage = () => {
   const [addMainIndex, setAddMainIndex] = useState(0);
   const [addDescs, setAddDescs] = useState<string[]>([]);
   const [addTitles, setAddTitles] = useState<string[]>([]);
+  const [attachmentDrafts, setAttachmentDrafts] = useState<
+    Record<string, { title: string; description: string }>
+  >({});
 
   const { data: doc, isLoading, isError } = useGetDocument(id);
   const { data: subject } = useGetSubject(doc?.subject_id);
   const updateMutation = useUpdateDocument(id ?? '');
   const deleteMutation = useDeleteDocument();
   const downloadMutation = useDownloadDocument();
-  const rateMutation = useRateDocument(id);
   const addAttachmentsMutation = useAddDocumentAttachments(id ?? '');
   const patchAttachmentMutation = usePatchDocumentAttachment(id ?? '');
   const deleteAttachmentMutation = useDeleteDocumentAttachment(id ?? '');
-  const [stars, setStars] = useState(0);
 
   const attachments = doc?.files ?? [];
 
@@ -173,13 +181,21 @@ export const DocumentDetailPage = () => {
     },
   });
   const { data: universitiesData } = useGetUniversities({ page: 1, limit: 500 });
-  const { data: branchesData } = useGetBranches({ page: 1, limit: 500 });
+  const { data: branchesData, isLoading: branchesLoading } = useGetAllBranches();
   const universityId = useWatch({ control: form.control, name: 'university_id' });
   const availableBranches = useMemo(() => {
-    const allBranches = branchesData?.items ?? [];
-    if (!universityId) return allBranches;
-    return allBranches.filter((branch) => branch.university_id === universityId);
-  }, [branchesData?.items, universityId]);
+    const allBranches = branchesData ?? [];
+    const selectedUniversityId = String(universityId ?? '').trim();
+    if (!selectedUniversityId) return allBranches;
+
+    const matched = allBranches.filter((branch) => {
+      const branchUniversityId = String(branch.university_id ?? '').trim();
+      return branchUniversityId === selectedUniversityId;
+    });
+
+    // Fallback: keep dropdown usable even when source data has inconsistent university mapping.
+    return matched.length ? matched : allBranches;
+  }, [branchesData, universityId]);
 
   useEffect(() => {
     if (doc) {
@@ -215,6 +231,7 @@ export const DocumentDetailPage = () => {
       branch_id: values.branch_id || null,
       semester: values.semester?.trim() ? Number(values.semester.trim()) : null,
     });
+    setEditDialogOpen(false);
   };
 
   const afterDeleteRoute = fromExplore
@@ -324,12 +341,6 @@ export const DocumentDetailPage = () => {
   const listBackLabel = fromExplore
     ? '← All materials'
     : '← Profile · Files';
-  const canRateDoc =
-    isStudent &&
-    !!uploaderId &&
-    !!user?.id &&
-    String(uploaderId) !== String(user.id);
-
   const totalSize = attachments.reduce(
     (acc, a) => acc + (a.file_size ?? 0),
     0,
@@ -349,6 +360,45 @@ export const DocumentDetailPage = () => {
       if (index < m) return Math.max(0, m - 1);
       return m;
     });
+  };
+
+  const makeSingleAttachmentPayload = (file: File, current: DocumentAttachment) => {
+    const fd = new FormData();
+    fd.append('files', file);
+    fd.append('file_titles', JSON.stringify([current.title || file.name.replace(/\.[^.]+$/, '').slice(0, 50)]));
+    fd.append(
+      'file_descriptions',
+      JSON.stringify([current.description?.trim() ? current.description.trim() : null]),
+    );
+    if (current.is_main) {
+      fd.append('main_index', '0');
+    }
+    return fd;
+  };
+
+  const handleReplaceAttachment = async (current: DocumentAttachment, file: File) => {
+    if (!id) return;
+    if (!file) return;
+
+    const currentCount = attachments.length;
+    const hasRoomForTemporaryExtra = currentCount < 10;
+
+    if (hasRoomForTemporaryExtra) {
+      await addAttachmentsMutation.mutateAsync(makeSingleAttachmentPayload(file, current));
+      await deleteAttachmentMutation.mutateAsync(current.id);
+      toast.success('File replaced');
+      return;
+    }
+
+    // If we are already at max capacity, replace in two steps.
+    await deleteAttachmentMutation.mutateAsync(current.id);
+    try {
+      await addAttachmentsMutation.mutateAsync(makeSingleAttachmentPayload(file, current));
+      toast.success('File replaced');
+    } catch (err) {
+      toast.error('Old file removed, but replacing failed. Please upload the file again.');
+      throw err;
+    }
   };
 
   return (
@@ -384,15 +434,6 @@ export const DocumentDetailPage = () => {
                 {doc.download_count} download{doc.download_count === 1 ? '' : 's'}
               </span>
             ) : null}
-            {isStudent &&
-            doc.rating_count != null &&
-            doc.rating_count > 0 ? (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                {Number(doc.rating_avg ?? 0).toFixed(1)} · {doc.rating_count}{' '}
-                rating{doc.rating_count === 1 ? '' : 's'}
-              </span>
-            ) : null}
           </div>
           {isStudent ? (
             <p className="mt-2 text-[11px] text-muted-foreground">
@@ -420,14 +461,38 @@ export const DocumentDetailPage = () => {
             ) : null}
           </PeerAttributionRow>
         </div>
-        <Button
-          className="shrink-0 rounded-lg"
-          onClick={() => void handleDownloadZip()}
-          disabled={downloadMutation.isPending}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          {downloadMutation.isPending ? 'Downloading…' : 'Download all (ZIP)'}
-        </Button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Button
+            className="rounded-lg"
+            onClick={() => void handleDownloadZip()}
+            disabled={downloadMutation.isPending}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {downloadMutation.isPending ? 'Downloading…' : 'Download all (ZIP)'}
+          </Button>
+          {isOwner ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-lg"
+                onClick={() => setEditDialogOpen(true)}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit details
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-lg"
+                onClick={() => setManageFilesDialogOpen(true)}
+              >
+                <Files className="mr-2 h-4 w-4" />
+                Manage files
+              </Button>
+            </>
+          ) : null}
+        </div>
       </div>
 
       <div className="w-full space-y-6">
@@ -599,50 +664,48 @@ export const DocumentDetailPage = () => {
         </section>
       </div>
 
-      {canRateDoc ? (
-        <Card className="gap-0 border border-border/60 py-0 shadow-sm ring-1 ring-black/4 dark:ring-white/6">
-          <CardHeader className="border-b border-border/50 py-4">
-            <CardTitle className="text-base">Rate this material</CardTitle>
-            <CardDescription className="text-xs">
-              One rating per person. You can&apos;t rate your own upload.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 py-4">
-            <StarPicker
-              value={stars}
-              onChange={setStars}
-              disabled={rateMutation.isPending}
-            />
-            <Button
-              type="button"
-              size="sm"
-              className="rounded-lg"
-              disabled={stars < 1 || rateMutation.isPending}
-              onClick={() => {
-                if (stars < 1) return;
-                void rateMutation.mutateAsync(stars);
-              }}
-            >
-              {rateMutation.isPending ? 'Submitting…' : 'Submit rating'}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
-
       {isOwner ? (
         <>
-          <Card className="gap-0 border border-border/60 py-0 shadow-sm ring-1 ring-black/4 dark:ring-white/6">
-            <CardHeader className="border-b border-border/50 py-4">
-              <CardTitle className="text-base">Edit document</CardTitle>
+          <Card className="border border-destructive/20 bg-destructive/5 py-0 shadow-none">
+            <CardHeader className="py-4">
+              <CardTitle className="text-base text-destructive">
+                Remove from library
+              </CardTitle>
               <CardDescription className="text-xs">
-                Update title, document description, visibility, and kind.
+                Hide removes the document from lists. Permanent delete removes
+                all stored files (cannot be undone).
               </CardDescription>
             </CardHeader>
-            <CardContent className="py-4">
-              <form
-                onSubmit={form.handleSubmit(onSaveMetadata)}
-                className="space-y-4"
+            <CardContent className="flex flex-wrap gap-2 pb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg"
+                onClick={() => setSoftDeleteOpen(true)}
               >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Hide document
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="rounded-lg"
+                onClick={() => setPermanentDeleteOpen(true)}
+              >
+                Delete permanently
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Edit document</DialogTitle>
+                <DialogDescription>
+                  Update title, description, visibility, kind, and academic metadata.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={form.handleSubmit(onSaveMetadata)} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Title</Label>
                   <Input id="title" {...form.register('title')} />
@@ -654,62 +717,45 @@ export const DocumentDetailPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Document description</Label>
-                  <Textarea
-                    id="description"
-                    rows={3}
-                    {...form.register('description')}
-                  />
+                  <Textarea id="description" rows={3} {...form.register('description')} />
                 </div>
-                <div className="space-y-2">
-                  <Label>Visibility</Label>
-                  <Controller
-                    control={form.control}
-                    name="visibility"
-                    render={({ field }) => (
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Visibility" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="PRIVATE">Private</SelectItem>
-                          <SelectItem value="PUBLIC">Public</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>File kind</Label>
-                  <Controller
-                    control={form.control}
-                    name="kind"
-                    render={({ field }) => (
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Kind" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="informational">
-                            Informational
-                          </SelectItem>
-                          <SelectItem value="lab_solutions">
-                            Lab / solutions
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {form.formState.errors.kind ? (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.kind.message}
-                    </p>
-                  ) : null}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Visibility</Label>
+                    <Controller
+                      control={form.control}
+                      name="visibility"
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Visibility" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="PRIVATE">Private</SelectItem>
+                            <SelectItem value="PUBLIC">Public</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>File kind</Label>
+                    <Controller
+                      control={form.control}
+                      name="kind"
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Kind" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="informational">Informational</SelectItem>
+                            <SelectItem value="lab_solutions">Lab / solutions</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-2">
@@ -749,9 +795,12 @@ export const DocumentDetailPage = () => {
                         <Select
                           value={field.value || 'none'}
                           onValueChange={(value) => field.onChange(value === 'none' ? '' : value)}
+                          disabled={branchesLoading}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select branch" />
+                            <SelectValue
+                              placeholder={branchesLoading ? 'Loading branches...' : 'Select branch'}
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">None</SelectItem>
@@ -770,220 +819,178 @@ export const DocumentDetailPage = () => {
                     <Input id="semester" {...form.register('semester')} placeholder="1-12" />
                   </div>
                 </div>
-                <Button
-                  type="submit"
-                  className="rounded-lg"
-                  disabled={updateMutation.isPending}
-                >
-                  {updateMutation.isPending ? 'Saving…' : 'Save changes'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card className="gap-0 border border-border/60 py-0 shadow-sm ring-1 ring-black/4 dark:ring-white/6">
-            <CardHeader className="border-b border-border/50 py-4">
-              <CardTitle className="text-base">Manage files</CardTitle>
-              <CardDescription className="text-xs">
-                Add up to {slotsLeft} more file{slotsLeft === 1 ? '' : 's'}.
-                One file must stay as main; you can change which file is main.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6 py-4">
-              {slotsLeft > 0 ? (
-                <div className="space-y-3 rounded-lg border border-dashed border-border/70 p-4">
-                  <Label>Add files</Label>
-                  <Input
-                    type="file"
-                    multiple
-                    accept={DOCUMENT_FILE_ACCEPT}
-                    disabled={addFiles.length >= slotsLeft}
-                    onChange={(e) => {
-                      const picked = Array.from(e.target.files ?? []);
-                      e.target.value = '';
-                      if (!picked.length) return;
-                      setAddFiles((prev) => {
-                        if (slotsLeft <= 0) return prev;
-                        if (prev.length >= slotsLeft) {
-                          toast.error(
-                            'Batch is full — upload these files or remove one from the list below.',
-                          );
-                          return prev;
-                        }
-                        const { merged, skippedDupes, capped } =
-                          mergeIntoFileList(prev, picked, slotsLeft);
-                        if (skippedDupes > 0 && merged.length === prev.length) {
-                          toast.error(
-                            'Those files are already in this batch (same name, size, and date).',
-                          );
-                          return prev;
-                        }
-                        const room = slotsLeft - prev.length;
-                        if (capped && picked.length > room) {
-                          toast(
-                            `Only ${room} more file${room === 1 ? '' : 's'} fit on this document.`,
-                          );
-                        }
-                        return merged;
-                      });
-                    }}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Choose files again to add to this batch (does not replace
-                    files you already picked). Up to {slotsLeft} new file
-                    {slotsLeft === 1 ? '' : 's'} total.
-                  </p>
-                  {addFiles.length > 0 ? (
-                    <div className="space-y-3">
-                      <p className="text-xs text-muted-foreground">
-                        Main among new uploads ({addFiles.length} / {slotsLeft})
-                      </p>
-                      <div className="space-y-4">
-                        {addFiles.map((f, i) => (
-                          <div
-                            key={`${fileDedupeKey(f)}-${i}`}
-                            className="space-y-3 rounded-md border border-border/50 bg-background/60 p-3 text-sm"
-                          >
-                            <div className="flex items-start gap-2">
-                              <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-2">
-                                <input
-                                  type="radio"
-                                  name="add_main"
-                                  className="mt-1 accent-primary"
-                                  checked={addMainIndex === i}
-                                  onChange={() => setAddMainIndex(i)}
-                                />
-                                <span className="min-w-0">
-                                  <span className="font-medium">{f.name}</span>
-                                  <span className="block text-xs text-muted-foreground">
-                                    Original · {formatFileSize(f.size)}
-                                  </span>
-                                </span>
-                              </label>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                                onClick={() => removeStagedFile(i)}
-                                aria-label={`Remove ${f.name} from batch`}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">
-                                Display title{' '}
-                                <span className="text-destructive">*</span> (max 50)
-                              </Label>
-                              <Input
-                                maxLength={50}
-                                className="text-sm"
-                                value={addTitles[i] ?? ''}
-                                onChange={(e) => {
-                                  const next = [...addTitles];
-                                  next[i] = e.target.value;
-                                  setAddTitles(next);
-                                }}
-                                placeholder="Shown in preview and lists"
-                              />
-                              <p className="text-[11px] text-muted-foreground">
-                                {(addTitles[i] ?? '').length}/50
-                              </p>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">
-                                Note (optional)
-                              </Label>
-                              <Textarea
-                                rows={2}
-                                className="text-sm"
-                                value={addDescs[i] ?? ''}
-                                onChange={(e) => {
-                                  const next = [...addDescs];
-                                  next[i] = e.target.value;
-                                  setAddDescs(next);
-                                }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="rounded-lg"
-                        disabled={addAttachmentsMutation.isPending}
-                        onClick={() => void submitAddFiles()}
-                      >
-                        {addAttachmentsMutation.isPending
-                          ? 'Uploading…'
-                          : 'Upload files'}
-                      </Button>
-                    </div>
-                  ) : null}
+                <div className="flex justify-end">
+                  <Button type="submit" className="rounded-lg" disabled={updateMutation.isPending}>
+                    {updateMutation.isPending ? 'Saving…' : 'Save changes'}
+                  </Button>
                 </div>
-              ) : null}
+              </form>
+            </DialogContent>
+          </Dialog>
 
-              <div className="space-y-4">
-                {attachments.map((att) => (
-                  <AttachmentOwnerRow
-                    key={att.id}
-                    att={att}
-                    canRemove={attachments.length > 1}
-                    busy={
-                      patchAttachmentMutation.isPending ||
-                      deleteAttachmentMutation.isPending
-                    }
-                    onSetMain={() =>
-                      void patchAttachmentMutation.mutateAsync({
-                        attachmentId: att.id,
-                        body: { is_main: true },
-                      })
-                    }
-                    onSaveFileDetails={({ title, description }) =>
-                      void patchAttachmentMutation.mutateAsync({
-                        attachmentId: att.id,
-                        body: { title, description },
-                      })
-                    }
-                    onRemove={() => setRemoveAttachmentId(att.id)}
-                  />
-                ))}
+          <Dialog open={manageFilesDialogOpen} onOpenChange={setManageFilesDialogOpen}>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Manage files</DialogTitle>
+                <DialogDescription>
+                  Add up to {slotsLeft} more file{slotsLeft === 1 ? '' : 's'}. One file must stay as main.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-6">
+                {slotsLeft > 0 ? (
+                  <div className="space-y-3 rounded-lg border border-dashed border-border/70 p-4">
+                    <Label>Add files</Label>
+                    <Input
+                      type="file"
+                      multiple
+                      accept={DOCUMENT_FILE_ACCEPT}
+                      disabled={addFiles.length >= slotsLeft}
+                      onChange={(e) => {
+                        const picked = Array.from(e.target.files ?? []);
+                        e.target.value = '';
+                        if (!picked.length) return;
+                        setAddFiles((prev) => {
+                          if (slotsLeft <= 0) return prev;
+                          if (prev.length >= slotsLeft) {
+                            toast.error(
+                              'Batch is full — upload these files or remove one from the list below.',
+                            );
+                            return prev;
+                          }
+                          const { merged, skippedDupes, capped } =
+                            mergeIntoFileList(prev, picked, slotsLeft);
+                          if (skippedDupes > 0 && merged.length === prev.length) {
+                            toast.error(
+                              'Those files are already in this batch (same name, size, and date).',
+                            );
+                            return prev;
+                          }
+                          const room = slotsLeft - prev.length;
+                          if (capped && picked.length > room) {
+                            toast(`Only ${room} more file${room === 1 ? '' : 's'} fit on this document.`);
+                          }
+                          return merged;
+                        });
+                      }}
+                    />
+                    {addFiles.length > 0 ? (
+                      <div className="space-y-3">
+                        <p className="text-xs text-muted-foreground">
+                          Main among new uploads ({addFiles.length} / {slotsLeft})
+                        </p>
+                        <div className="space-y-4">
+                          {addFiles.map((f, i) => (
+                            <div
+                              key={`${fileDedupeKey(f)}-${i}`}
+                              className="space-y-3 rounded-md border border-border/50 bg-background/60 p-3 text-sm"
+                            >
+                              <div className="flex items-start gap-2">
+                                <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-2">
+                                  <input
+                                    type="radio"
+                                    name="add_main"
+                                    className="mt-1 accent-primary"
+                                    checked={addMainIndex === i}
+                                    onChange={() => setAddMainIndex(i)}
+                                  />
+                                  <span className="min-w-0">
+                                    <span className="font-medium">{f.name}</span>
+                                    <span className="block text-xs text-muted-foreground">
+                                      Original · {formatFileSize(f.size)}
+                                    </span>
+                                  </span>
+                                </label>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                                  onClick={() => removeStagedFile(i)}
+                                  aria-label={`Remove ${f.name} from batch`}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">
+                                  Display title <span className="text-destructive">*</span> (max 50)
+                                </Label>
+                                <Input
+                                  maxLength={50}
+                                  className="text-sm"
+                                  value={addTitles[i] ?? ''}
+                                  onChange={(e) => {
+                                    const next = [...addTitles];
+                                    next[i] = e.target.value;
+                                    setAddTitles(next);
+                                  }}
+                                  placeholder="Shown in preview and lists"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Note (optional)</Label>
+                                <Textarea
+                                  rows={2}
+                                  className="text-sm"
+                                  value={addDescs[i] ?? ''}
+                                  onChange={(e) => {
+                                    const next = [...addDescs];
+                                    next[i] = e.target.value;
+                                    setAddDescs(next);
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex justify-end">
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="rounded-lg"
+                            disabled={addAttachmentsMutation.isPending}
+                            onClick={() => void submitAddFiles()}
+                          >
+                            {addAttachmentsMutation.isPending ? 'Uploading…' : 'Upload files'}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <div className="space-y-4">
+                  {attachments.map((att) => (
+                    <AttachmentOwnerRow
+                      key={att.id}
+                      att={att}
+                      canRemove={attachments.length > 1}
+                      busy={patchAttachmentMutation.isPending || deleteAttachmentMutation.isPending}
+                      draftTitle={attachmentDrafts[att.id]?.title ?? att.title ?? ''}
+                      draftDescription={attachmentDrafts[att.id]?.description ?? att.description ?? ''}
+                      onDraftChange={(next) =>
+                        setAttachmentDrafts((prev) => ({
+                          ...prev,
+                          [att.id]: {
+                            title: next.title ?? prev[att.id]?.title ?? '',
+                            description: next.description ?? prev[att.id]?.description ?? '',
+                          },
+                        }))
+                      }
+                      onSetMain={() =>
+                        void patchAttachmentMutation.mutateAsync({
+                          attachmentId: att.id,
+                          body: { is_main: true },
+                        })
+                      }
+                      onReplace={(file) => void handleReplaceAttachment(att, file)}
+                      onRemove={() => setRemoveAttachmentId(att.id)}
+                    />
+                  ))}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-destructive/20 bg-destructive/5 py-0 shadow-none">
-            <CardHeader className="py-4">
-              <CardTitle className="text-base text-destructive">
-                Remove from library
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Hide removes the document from lists. Permanent delete removes
-                all stored files (cannot be undone).
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2 pb-4">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-                onClick={() => setSoftDeleteOpen(true)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Hide document
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="rounded-lg"
-                onClick={() => setPermanentDeleteOpen(true)}
-              >
-                Delete permanently
-              </Button>
-            </CardContent>
-          </Card>
+            </DialogContent>
+          </Dialog>
 
           <ConfirmationModal
             open={softDeleteOpen}
@@ -1028,38 +1035,23 @@ function AttachmentOwnerRow({
   att,
   canRemove,
   busy,
+  draftTitle,
+  draftDescription,
+  onDraftChange,
   onSetMain,
-  onSaveFileDetails,
+  onReplace,
   onRemove,
 }: {
   att: DocumentAttachment;
   canRemove: boolean;
   busy: boolean;
+  draftTitle: string;
+  draftDescription: string;
+  onDraftChange: (next: { title?: string; description?: string }) => void;
   onSetMain: () => void;
-  onSaveFileDetails: (payload: { title: string; description: string }) => void;
+  onReplace: (file: File) => void;
   onRemove: () => void;
 }) {
-  const [localTitle, setLocalTitle] = useState(att.title ?? '');
-  const [localDesc, setLocalDesc] = useState(att.description ?? '');
-
-  useEffect(() => {
-    setLocalTitle(att.title ?? '');
-    setLocalDesc(att.description ?? '');
-  }, [att.id, att.title, att.description]);
-
-  const handleSaveDetails = () => {
-    const t = localTitle.trim();
-    if (!t) {
-      toast.error('Display title is required (1–50 characters).');
-      return;
-    }
-    if (t.length > 50) {
-      toast.error('Title cannot exceed 50 characters.');
-      return;
-    }
-    onSaveFileDetails({ title: t, description: localDesc.trim() });
-  };
-
   return (
     <div className="rounded-lg border border-border/60 bg-muted/10 p-3 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1091,11 +1083,11 @@ function AttachmentOwnerRow({
           <Input
             maxLength={50}
             className="text-sm"
-            value={localTitle}
-            onChange={(e) => setLocalTitle(e.target.value)}
+            value={draftTitle}
+            onChange={(e) => onDraftChange({ title: e.target.value })}
           />
           <p className="text-[11px] text-muted-foreground">
-            {localTitle.length}/50
+            {draftTitle.length}/50
           </p>
         </div>
         <div className="space-y-1">
@@ -1103,20 +1095,30 @@ function AttachmentOwnerRow({
           <Textarea
             rows={2}
             className="text-sm"
-            value={localDesc}
-            onChange={(e) => setLocalDesc(e.target.value)}
+            value={draftDescription}
+            onChange={(e) => onDraftChange({ description: e.target.value })}
           />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
             size="sm"
-            variant="secondary"
+            variant="outline"
             className="rounded-lg"
             disabled={busy}
-            onClick={handleSaveDetails}
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = DOCUMENT_FILE_ACCEPT;
+              input.onchange = () => {
+                const picked = input.files?.[0];
+                if (!picked) return;
+                onReplace(picked);
+              };
+              input.click();
+            }}
           >
-            Save file details
+            Replace file
           </Button>
           {canRemove ? (
             <Button
