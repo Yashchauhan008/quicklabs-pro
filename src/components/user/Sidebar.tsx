@@ -128,11 +128,11 @@ export const Sidebar = ({
       logoutContext();
       onNavigate?.();
       toast.success('Signed out. See you soon!');
-      navigate('/login');
+      navigate('/');
     } catch {
       logoutContext();
       onNavigate?.();
-      navigate('/login');
+      navigate('/');
     }
   };
 

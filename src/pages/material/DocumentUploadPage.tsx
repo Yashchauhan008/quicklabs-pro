@@ -87,13 +87,10 @@ export const DocumentUploadPage = () => {
   });
 
   const files = useWatch({ control: form.control, name: 'files' });
-  const universityId = useWatch({ control: form.control, name: 'university_id' });
+
   const { data: universitiesData } = useGetUniversities({ page: 1, limit: 500 });
   const { data: allBranches = [] } = useGetAllBranches();
-  const availableBranches = useMemo(() => {
-    if (!universityId) return allBranches;
-    return allBranches.filter((branch) => branch.university_id === universityId);
-  }, [allBranches, universityId]);
+  const availableBranches = allBranches;
 
   useEffect(() => {
     if (!subjects.length) return;
@@ -140,14 +137,7 @@ export const DocumentUploadPage = () => {
     }
   }, [files, form]);
 
-  useEffect(() => {
-    const currentBranchId = form.getValues('branch_id');
-    if (!currentBranchId) return;
-    const stillValid = availableBranches.some((branch) => branch.id === currentBranchId);
-    if (!stillValid) {
-      form.setValue('branch_id', '');
-    }
-  }, [availableBranches, form]);
+
 
   const onSubmit = async (values: DocumentUploadFormValues) => {
     const fd = new FormData();
@@ -378,7 +368,6 @@ export const DocumentUploadPage = () => {
                       value={field.value || 'none'}
                       onValueChange={(value) => {
                         field.onChange(value === 'none' ? '' : value);
-                        form.setValue('branch_id', '');
                       }}
                     >
                       <SelectTrigger className="w-full">

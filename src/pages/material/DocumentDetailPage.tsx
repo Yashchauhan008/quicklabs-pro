@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Link,
@@ -203,20 +203,8 @@ export const DocumentDetailPage = () => {
   });
   const { data: universitiesData } = useGetUniversities({ page: 1, limit: 500 });
   const { data: branchesData, isLoading: branchesLoading } = useGetAllBranches();
-  const universityId = useWatch({ control: form.control, name: 'university_id' });
-  const availableBranches = useMemo(() => {
-    const allBranches = branchesData ?? [];
-    const selectedUniversityId = String(universityId ?? '').trim();
-    if (!selectedUniversityId) return allBranches;
 
-    const matched = allBranches.filter((branch) => {
-      const branchUniversityId = String(branch.university_id ?? '').trim();
-      return branchUniversityId === selectedUniversityId;
-    });
-
-    // Fallback: keep dropdown usable even when source data has inconsistent university mapping.
-    return matched.length ? matched : allBranches;
-  }, [branchesData, universityId]);
+  const availableBranches = branchesData ?? [];
 
   useEffect(() => {
     if (doc) {
@@ -232,14 +220,7 @@ export const DocumentDetailPage = () => {
     }
   }, [doc, form]);
 
-  useEffect(() => {
-    const currentBranchId = form.getValues('branch_id');
-    if (!currentBranchId) return;
-    const stillValid = availableBranches.some((branch) => branch.id === currentBranchId);
-    if (!stillValid) {
-      form.setValue('branch_id', '');
-    }
-  }, [availableBranches, form]);
+
 
   const onSaveMetadata = async (values: DocumentUpdateFormValues) => {
     if (!id) return;
@@ -273,10 +254,11 @@ export const DocumentDetailPage = () => {
     navigate(afterDeleteRoute);
   };
 
-  const handleDownloadZip = async () => {
+  const handleDownload = async () => {
     if (!id || !doc) return;
     const base = doc.title.replace(/\s+/g, '_').replace(/[^\w-]+/g, '') || 'document';
-    await downloadMutation.mutateAsync({ id, fallbackName: base });
+    const fallbackName = attachments.length > 1 ? `${base}.zip` : base;
+    await downloadMutation.mutateAsync({ id, fallbackName });
   };
 
   const submitAddFiles = async () => {
@@ -477,8 +459,9 @@ export const DocumentDetailPage = () => {
           </div>
           {isStudent ? (
             <p className="mt-2 text-[11px] text-muted-foreground">
-              ZIP download counts once toward your daily limit. Opening each
-              preview tab loads that file and may count separately.
+              {attachments.length > 1 
+                ? 'ZIP download counts once toward your daily limit. Opening each preview tab loads that file and may count separately.'
+                : 'Downloading counts toward your daily limit. Opening each preview tab loads that file and may count separately.'}
             </p>
           ) : null}
           {doc.updated_at ? (
@@ -504,11 +487,15 @@ export const DocumentDetailPage = () => {
         <div className="flex shrink-0 flex-wrap gap-2">
           <Button
             className="rounded-lg"
-            onClick={() => void handleDownloadZip()}
+            onClick={() => void handleDownload()}
             disabled={downloadMutation.isPending}
           >
             <Download className="mr-2 h-4 w-4" />
-            {downloadMutation.isPending ? 'Downloading…' : 'Download all (ZIP)'}
+            {downloadMutation.isPending 
+              ? 'Downloading…' 
+              : attachments.length > 1 
+                ? 'Download all (ZIP)' 
+                : 'Download file'}
           </Button>
           <Button
             variant="outline"
@@ -552,10 +539,10 @@ export const DocumentDetailPage = () => {
             <div className="min-w-0">
               <h2 className="text-sm font-semibold tracking-tight">Preview</h2>
               <p className="text-[11px] text-muted-foreground lg:hidden">
-                Swipe tabs to switch files — use ZIP to download everything
+                Swipe tabs to switch files
               </p>
               <p className="hidden text-[11px] text-muted-foreground lg:block">
-                Pick a file on the left — details stay on the right — ZIP downloads all
+                Pick a file on the left — details stay on the right
               </p>
             </div>
           </div>
@@ -827,7 +814,6 @@ export const DocumentDetailPage = () => {
                           value={field.value || 'none'}
                           onValueChange={(value) => {
                             field.onChange(value === 'none' ? '' : value);
-                            form.setValue('branch_id', '');
                           }}
                         >
                           <SelectTrigger className="w-full">

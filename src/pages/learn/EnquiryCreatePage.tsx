@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { enquiryFormSchema, type EnquiryFormValues } from '@/schema/enquiry';
 import { useCreateEnquiry } from '@/hooks/useStudentFeatures';
 import { useAuth } from '@/context/AuthContext';
@@ -32,15 +33,28 @@ export const EnquiryCreatePage = () => {
   const createMutation = useCreateEnquiry();
   const isStudent = isStudentRole(user?.role);
 
+  const [searchParams] = useSearchParams();
+
   const form = useForm<EnquiryFormValues>({
     resolver: zodResolver(enquiryFormSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      topic: 'other',
+      title: searchParams.get('title') || '',
+      description: searchParams.get('description') || '',
+      topic: (searchParams.get('topic') as EnquiryFormValues['topic']) || 'other',
       is_private: false,
     },
   });
+
+  // Re-sync if params change (useful if user navigates between different FAQ types)
+  useEffect(() => {
+    const title = searchParams.get('title');
+    const description = searchParams.get('description');
+    const topic = searchParams.get('topic') as EnquiryFormValues['topic'];
+
+    if (title) form.setValue('title', title);
+    if (description) form.setValue('description', description);
+    if (topic) form.setValue('topic', topic);
+  }, [searchParams, form]);
 
   const onSubmit = async (values: EnquiryFormValues) => {
     await createMutation.mutateAsync({

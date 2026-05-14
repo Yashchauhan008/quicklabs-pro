@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import { getApiErrorMessage } from '@/utils/apiError';
@@ -33,6 +33,21 @@ export function useGetDocuments(params?: DocumentListParams) {
   return useQuery({
     queryKey: documentKeys.list(params ?? {}),
     queryFn: () => getDocuments(params),
+    enabled: isLoggedIn && !isLoadingUser,
+  });
+}
+
+export function useInfiniteGetDocuments(params?: DocumentListParams) {
+  const { isLoggedIn, isLoadingUser } = useAuth();
+  return useInfiniteQuery({
+    queryKey: [...documentKeys.lists(), getApiScope(), params, 'infinite'] as const,
+    queryFn: ({ pageParam = 1 }) =>
+      getDocuments({ ...params, page: pageParam as number }),
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.meta;
+      return page < totalPages ? page + 1 : undefined;
+    },
+    initialPageParam: 1,
     enabled: isLoggedIn && !isLoadingUser,
   });
 }
@@ -153,10 +168,7 @@ export function useDownloadDocument() {
       fallbackName?: string;
     }) => {
       const { blob, filename } = await downloadDocumentFile(id);
-      let name = filename || fallbackName || `document-${id}.zip`;
-      if (name && !name.toLowerCase().endsWith('.zip')) {
-        name = `${name.replace(/\.[^/.]+$/, '')}.zip`;
-      }
+      const name = filename || fallbackName || `document-${id}`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

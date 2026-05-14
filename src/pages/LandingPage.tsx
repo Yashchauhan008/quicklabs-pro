@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion, Variants } from 'framer-motion';
 import { 
   BookOpen, 
@@ -7,19 +7,20 @@ import {
   Users, 
   Zap, 
   Shield, 
-  Sparkles,
   ArrowRight,
   Github,
   Twitter,
   Linkedin,
   Terminal,
   Code2,
-  Cpu
+  Cpu,
+  GraduationCap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const LandingPage = () => {
+  const location = useLocation();
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -56,7 +57,7 @@ const LandingPage = () => {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 shadow-lg shadow-violet-200 dark:shadow-none group-hover:rotate-12 transition-transform duration-300">
-              <Sparkles className="h-6 w-6 text-white" />
+              <GraduationCap className="h-6 w-6 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
               QuickLabs <span className="text-violet-600">Pro</span>
@@ -78,11 +79,11 @@ const LandingPage = () => {
 
           <div className="flex items-center gap-3">
             <Button variant="ghost" asChild className="hidden sm:inline-flex">
-              <Link to="/login">Sign In</Link>
+              <Link to="/login" state={{ from: location.state?.from }}>Sign In</Link>
             </Button>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button className="bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-200 dark:shadow-none" asChild>
-                <Link to="/login">Get Started</Link>
+                <Link to="/login" state={{ from: location.state?.from }}>Get Started</Link>
               </Button>
             </motion.div>
           </div>
@@ -117,7 +118,7 @@ const LandingPage = () => {
                 <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Button size="lg" className="h-14 px-8 text-lg bg-violet-600 hover:bg-violet-700 text-white w-full sm:w-auto shadow-xl shadow-violet-500/20" asChild>
-                      <Link to="/login" className="flex items-center gap-2">
+                      <Link to="/login" state={{ from: location.state?.from }} className="flex items-center gap-2">
                         Start Learning <ArrowRight className="h-5 w-5" />
                       </Link>
                     </Button>
@@ -307,11 +308,11 @@ const LandingPage = () => {
               <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button size="lg" className="h-14 px-10 text-lg bg-violet-600 hover:bg-violet-700 text-white shadow-xl shadow-violet-500/40" asChild>
-                    <Link to="/login">Get Started for Free</Link>
+                    <Link to="/login" state={{ from: location.state?.from }}>Get Started for Free</Link>
                   </Button>
                 </motion.div>
                 <Button size="lg" variant="outline" className="h-14 px-10 text-lg border-slate-700 text-white hover:bg-white/10" asChild>
-                  <Link to="/login">View All Courses</Link>
+                  <Link to="/login" state={{ from: location.state?.from }}>View All Courses</Link>
                 </Button>
               </div>
               <p className="mt-6 text-sm text-slate-500 italic">No credit card required for basic access.</p>
@@ -327,7 +328,7 @@ const LandingPage = () => {
             <div className="md:col-span-2 lg:col-span-2">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600">
-                  <Sparkles className="h-5 w-5 text-white" />
+                  <GraduationCap className="h-5 w-5 text-white" />
                 </div>
                 <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                   QuickLabs <span className="text-violet-600">Pro</span>

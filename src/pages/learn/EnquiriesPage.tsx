@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import type { EnquirySort, EnquiryStatus } from '@/types/student';
 import { formatDateTime } from '@/utils/formate';
-import { Plus } from 'lucide-react';
+import { Plus, FilePlus, BookPlus, AlertCircle, MessageSquare } from 'lucide-react';
 
 export const EnquiriesPage = () => {
   const [page, setPage] = useState(1);
@@ -80,12 +80,93 @@ export const EnquiriesPage = () => {
         </Button>
       </div>
 
+      <div className="space-y-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          How can we help?
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          {
+            title: 'New Material',
+            description: 'Request additional study materials',
+            icon: FilePlus,
+            color: 'text-blue-500',
+            bg: 'bg-blue-50 dark:bg-blue-900/20',
+            topic: 'document',
+            preFill: {
+              title: 'Request: New study material',
+              description: 'I would like to request new material for: ',
+            },
+          },
+          {
+            title: 'New Subject',
+            description: 'Suggest a new course or subject',
+            icon: BookPlus,
+            color: 'text-purple-500',
+            bg: 'bg-purple-50 dark:bg-purple-900/20',
+            topic: 'subject',
+            preFill: {
+              title: 'Request: New subject addition',
+              description: 'I would like to suggest adding a new subject: ',
+            },
+          },
+          {
+            title: 'Report Issue',
+            description: 'Found a mistake or technical bug?',
+            icon: AlertCircle,
+            color: 'text-amber-500',
+            bg: 'bg-amber-50 dark:bg-amber-900/20',
+            topic: 'report',
+            preFill: {
+              title: 'Issue Report',
+              description: 'I found an issue with: ',
+            },
+          },
+          {
+            title: 'Other Help',
+            description: 'Anything else you need help with',
+            icon: MessageSquare,
+            color: 'text-emerald-500',
+            bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+            topic: 'other',
+            preFill: {
+              title: 'General Enquiry',
+              description: 'I have a question about: ',
+            },
+          },
+        ].map((faq) => (
+          <Link
+            key={faq.title}
+            to={`${ROUTES.ENQUIRY_NEW}?topic=${faq.topic}&title=${encodeURIComponent(faq.preFill.title)}&description=${encodeURIComponent(faq.preFill.description)}`}
+            className="group block"
+          >
+            <Card className="h-full border-0 shadow-sm ring-1 ring-black/4 transition-all hover:shadow-md hover:ring-black/10 dark:ring-white/6 dark:hover:ring-white/10">
+              <CardContent className="p-4">
+                <div
+                  className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${faq.bg}`}
+                >
+                  <faq.icon className={`h-5 w-5 ${faq.color}`} />
+                </div>
+                <h3 className="font-semibold">{faq.title}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {faq.description}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+        </div>
+      </div>
+
       <Card className="border-0 shadow-md ring-1 ring-black/4 dark:ring-white/6">
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-lg">All enquiries</CardTitle>
-          <div className="grid w-full grid-cols-1 gap-2 sm:max-w-md sm:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-xl font-bold">All enquiries</CardTitle>
+            <p className="text-sm text-muted-foreground">Manage and track your help requests</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Status:</label>
               <Select
                 value={status}
                 onValueChange={(v) => {
@@ -93,7 +174,7 @@ export const EnquiriesPage = () => {
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="rounded-lg">
+                <SelectTrigger className="h-9 w-[130px] rounded-lg bg-muted/50 border-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -105,8 +186,8 @@ export const EnquiriesPage = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Sort</label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Sort:</label>
               <Select
                 value={sort}
                 onValueChange={(v) => {
@@ -114,12 +195,12 @@ export const EnquiriesPage = () => {
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="rounded-lg">
+                <SelectTrigger className="h-9 w-[130px] rounded-lg bg-muted/50 border-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="recent">Recent</SelectItem>
-                  <SelectItem value="priority">Priority (votes)</SelectItem>
+                  <SelectItem value="priority">Priority</SelectItem>
                 </SelectContent>
               </Select>
             </div>

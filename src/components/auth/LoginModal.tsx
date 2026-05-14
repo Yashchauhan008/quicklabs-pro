@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Sparkles, X, LogIn } from 'lucide-react';
+import { GraduationCap, X, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -37,7 +37,7 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
             {/* Header */}
             <div className="text-center mb-8">
               <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-xl mb-4 text-violet-600 dark:bg-slate-800">
-                <Sparkles className="h-8 w-8" />
+                <GraduationCap className="h-8 w-8" />
               </div>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Unlock Content</h2>
               <p className="text-slate-500 dark:text-slate-400 mt-2">
@@ -63,7 +63,7 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                 size="lg" 
                 className="w-full h-12 text-md bg-violet-600 hover:bg-violet-700 text-white rounded-xl shadow-lg shadow-violet-500/20"
               >
-                <Link to={`/login?redirect=${encodeURIComponent(location.pathname)}`}>
+                <Link to="/login" state={{ from: location }}>
                   <LogIn className="mr-2 h-5 w-5" /> Sign In Now
                 </Link>
               </Button>
@@ -71,7 +71,8 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
               <div className="text-center">
                 <span className="text-sm text-slate-500">Don't have an account? </span>
                 <Link 
-                  to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
+                  to="/login"
+                  state={{ from: location }}
                   className="text-sm font-semibold text-violet-600 hover:text-violet-700"
                 >
                   Create one free

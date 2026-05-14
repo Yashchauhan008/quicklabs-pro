@@ -77,6 +77,15 @@ export const SubjectDetailPage = () => {
     [docs],
   );
 
+  const [hasSetDefaultTab, setHasSetDefaultTab] = useState(false);
+
+  if (!docsLoading && docs.length > 0 && !hasSetDefaultTab) {
+    if (informationalDocs.length === 0 && labDocs.length > 0) {
+      setMaterialsTab('lab_solutions');
+    }
+    setHasSetDefaultTab(true);
+  }
+
   const handleDelete = async () => {
     if (!id) return;
     await deleteMutation.mutateAsync(id);

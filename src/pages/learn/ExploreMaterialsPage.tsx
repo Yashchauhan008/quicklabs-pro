@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, generatePath } from 'react-router-dom';
-import { useGetDocuments } from '@/hooks/useDocuments';
+import { useInfiniteGetDocuments } from '@/hooks/useDocuments';
 import { useGetSubjects } from '@/hooks/useSubjects';
 import { ROUTES } from '@/config';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,12 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/AuthContext';
 import { isStudentRole } from '@/utils/roles';
-import { Globe2, Upload } from 'lucide-react';
+import { Globe2, Upload, Loader2 } from 'lucide-react';
 import { MaterialCard } from '@/components/shared/MaterialCard';
+import { useInView } from 'react-intersection-observer';
 
 export const ExploreMaterialsPage = () => {
   const { user } = useAuth();
-  const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
 
@@ -30,17 +30,33 @@ export const ExploreMaterialsPage = () => {
 
   const listParams = useMemo(
     () => ({
-      page,
       limit: 12,
       search: debouncedSearch || undefined,
       visibility: 'PUBLIC' as const,
     }),
-    [page, debouncedSearch],
+    [debouncedSearch],
   );
 
-  const { data, isLoading, isFetching } = useGetDocuments(listParams);
-  const items = data?.items ?? [];
-  const meta = data?.meta;
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteGetDocuments(listParams);
+
+  const { ref, inView } = useInView();
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const items = useMemo(() => {
+    return data?.pages.flatMap((page) => page.items) ?? [];
+  }, [data]);
+
   const isStudent = isStudentRole(user?.role);
 
   return (
@@ -73,10 +89,7 @@ export const ExploreMaterialsPage = () => {
           <Input
             placeholder="Search by title…"
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => setSearch(e.target.value)}
             className="rounded-lg"
           />
         </div>
@@ -95,7 +108,7 @@ export const ExploreMaterialsPage = () => {
           </CardContent>
         </Card>
       ) : (
-        <>
+        <div className="space-y-8">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((d) => {
               const courseName =
@@ -114,35 +127,26 @@ export const ExploreMaterialsPage = () => {
             })}
           </div>
 
-          {meta && meta.totalPages > 1 && (
-            <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-6">
-              <p className="text-sm text-muted-foreground">
-                Page {meta.page} of {meta.totalPages} ({meta.total} files)
-                {isFetching ? ' · Updating…' : ''}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= meta.totalPages}
-                  onClick={() =>
-                    setPage((p) => Math.min(meta.totalPages, p + 1))
-                  }
-                >
-                  Next
-                </Button>
+          <div
+            ref={ref}
+            className="flex items-center justify-center py-4"
+          >
+            {isFetchingNextPage ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading more...
               </div>
-            </div>
-          )}
-        </>
+            ) : hasNextPage ? (
+              <p className="text-sm text-muted-foreground/60">
+                Scroll for more materials
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground/60">
+                You&apos;ve reached the end
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

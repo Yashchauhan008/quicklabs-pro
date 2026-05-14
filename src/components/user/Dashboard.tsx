@@ -423,7 +423,7 @@ export const Dashboard = () => {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {[
           {
-            title: 'Recent courses',
+            title: 'Top courses',
             emptyText: 'No courses yet.',
             loadingState: subjectsLoading,
             items: (subjectsData?.items ?? []).slice(0, 4).map((subject) => ({
