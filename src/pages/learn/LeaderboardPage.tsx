@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { UserAvatar } from '@/components/shared/UserAvatar';
 import { pickDocumentUploader } from '@/utils/displayUser';
 import type { SubjectDocument } from '@/types/document';
+import SEO from '@/components/shared/SEO';
 
 type LeaderboardRow = {
   userId: string;
@@ -66,6 +67,7 @@ export const LeaderboardPage = () => {
 
   return (
     <div className="space-y-6">
+      <SEO title="Leaderboard" description="See the top contributors in our learning community ranked by their contributions." />
       <div>
         <div className="mb-2 flex items-center gap-2 text-muted-foreground">
           <Trophy className="h-5 w-5" />

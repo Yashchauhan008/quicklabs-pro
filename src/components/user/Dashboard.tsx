@@ -42,6 +42,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardToolsPreview } from '@/components/user/DashboardToolsPreview';
 import { pickDocumentUploader } from '@/utils/displayUser';
 import type { SubjectDocument } from '@/types/document';
+import SEO from '@/components/shared/SEO';
 
 const PIE_COLORS = ['#7c3aed', '#6366f1', '#8b5cf6', '#a855f7', '#818cf8', '#c084fc'];
 
@@ -178,6 +179,7 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6 pb-3">
+      <SEO title="Dashboard" description="Overview of your courses, materials, and learning progress." />
       <Card className="overflow-hidden border-violet-300/40 bg-linear-to-br from-violet-600 via-indigo-600 to-blue-600 text-white shadow-xl">
         <CardHeader className="space-y-4 pb-5">
           <div className="space-y-1.5">
@@ -390,7 +392,7 @@ export const Dashboard = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={coursePieData}
+                           data={coursePieData}
                           cx="50%"
                           cy="50%"
                           innerRadius={52}

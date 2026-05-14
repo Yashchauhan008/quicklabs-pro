@@ -13,6 +13,7 @@ import { googleConfig, ROUTES } from '@/config';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { motion } from 'framer-motion';
 import { GraduationCap } from 'lucide-react';
+import SEO from '@/components/shared/SEO';
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -70,6 +71,7 @@ export const Login = () => {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-950">
+      <SEO title="Secure Login" description="Sign in to your QuickLabs Pro account to access your courses and materials." />
       {/* Decorative Blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] right-[-5%] w-[35%] h-[35%] rounded-full bg-indigo-200/30 blur-[100px] animate-pulse" />

@@ -5,6 +5,7 @@ import {
   Navigate,
   useLocation,
 } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/theme-provider';
 import { LearningLayout } from '@/components/user/LearningLayout';
@@ -52,58 +53,60 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="lms-ui-theme">
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Navigate to={ROUTES.LOGIN} replace />} />
+    <HelmetProvider>
+      <ThemeProvider defaultTheme="light" storageKey="lms-ui-theme">
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Navigate to={ROUTES.LOGIN} replace />} />
 
-            <Route path="/learn" element={<LearningLayout />}>
-              <Route index element={<Navigate to="dashboard" replace />} />
-              
-              {/* Strictly Protected Children */}
-              <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="courses" element={<ProtectedRoute><ExploreCoursesPage /></ProtectedRoute>} />
-              <Route path="materials" element={<ProtectedRoute><ExploreMaterialsPage /></ProtectedRoute>} />
-              <Route
-                path="course/create"
-                element={
-                  <ProtectedRoute>
-                    {!IS_DEVELOPMENT ? <Navigate to={ROUTES.EXPLORE_COURSES} replace /> : <SubjectFormPage />}
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="course/:id/edit" element={<ProtectedRoute><SubjectFormPage /></ProtectedRoute>} />
-              <Route path="course/:id" element={<ProtectedRoute><SubjectDetailPage /></ProtectedRoute>} />
-              <Route path="document/add" element={<ProtectedRoute><DocumentUploadPage /></ProtectedRoute>} />
-              
-              {/* Semi-Public Child (handles its own auth state with a modal) */}
-              <Route path="document/:id" element={<DocumentDetailPage />} />
-              
-              <Route path="documents" element={<Navigate to={ROUTES.EXPLORE_MATERIALS} replace />} />
-              <Route path="document" element={<Navigate to={ROUTES.EXPLORE_MATERIALS} replace />} />
-              
-              <Route path="enquiries/new" element={<ProtectedRoute><EnquiryCreatePage /></ProtectedRoute>} />
-              <Route path="enquiries" element={<ProtectedRoute><EnquiriesPage /></ProtectedRoute>} />
-              <Route path="leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
-              <Route path="super-desk" element={<ProtectedRoute><SuperDeskPage /></ProtectedRoute>} />
-              <Route path="peers/:peerId" element={<ProtectedRoute><PeerProfilePage /></ProtectedRoute>} />
-              <Route path="peers" element={<ProtectedRoute><PeerLookupPage /></ProtectedRoute>} />
-              <Route path="tools" element={<ProtectedRoute><ExploreToolsPage /></ProtectedRoute>} />
-              <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="profile/edit" element={<ProtectedRoute><ProfileEditPage /></ProtectedRoute>} />
-              <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="unauthorized" element={<ProtectedRoute><Unauthorized /></ProtectedRoute>} />
-            </Route>
+              <Route path="/learn" element={<LearningLayout />}>
+                <Route index element={<Navigate to="dashboard" replace />} />
+                
+                {/* Strictly Protected Children */}
+                <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="courses" element={<ProtectedRoute><ExploreCoursesPage /></ProtectedRoute>} />
+                <Route path="materials" element={<ProtectedRoute><ExploreMaterialsPage /></ProtectedRoute>} />
+                <Route
+                  path="course/create"
+                  element={
+                    <ProtectedRoute>
+                      {!IS_DEVELOPMENT ? <Navigate to={ROUTES.EXPLORE_COURSES} replace /> : <SubjectFormPage />}
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="course/:id/edit" element={<ProtectedRoute><SubjectFormPage /></ProtectedRoute>} />
+                <Route path="course/:id" element={<ProtectedRoute><SubjectDetailPage /></ProtectedRoute>} />
+                <Route path="document/add" element={<ProtectedRoute><DocumentUploadPage /></ProtectedRoute>} />
+                
+                {/* Semi-Public Child (handles its own auth state with a modal) */}
+                <Route path="document/:id" element={<DocumentDetailPage />} />
+                
+                <Route path="documents" element={<Navigate to={ROUTES.EXPLORE_MATERIALS} replace />} />
+                <Route path="document" element={<Navigate to={ROUTES.EXPLORE_MATERIALS} replace />} />
+                
+                <Route path="enquiries/new" element={<ProtectedRoute><EnquiryCreatePage /></ProtectedRoute>} />
+                <Route path="enquiries" element={<ProtectedRoute><EnquiriesPage /></ProtectedRoute>} />
+                <Route path="leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
+                <Route path="super-desk" element={<ProtectedRoute><SuperDeskPage /></ProtectedRoute>} />
+                <Route path="peers/:peerId" element={<ProtectedRoute><PeerProfilePage /></ProtectedRoute>} />
+                <Route path="peers" element={<ProtectedRoute><PeerLookupPage /></ProtectedRoute>} />
+                <Route path="tools" element={<ProtectedRoute><ExploreToolsPage /></ProtectedRoute>} />
+                <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="profile/edit" element={<ProtectedRoute><ProfileEditPage /></ProtectedRoute>} />
+                <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="unauthorized" element={<ProtectedRoute><Unauthorized /></ProtectedRoute>} />
+              </Route>
 
-            <Route path="/" element={<LandingPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </ThemeProvider>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
+    </HelmetProvider>
   );
 }
 

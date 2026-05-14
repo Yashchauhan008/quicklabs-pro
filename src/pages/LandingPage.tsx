@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import SEO from '@/components/shared/SEO';
 
 const LandingPage = () => {
   const location = useLocation();
@@ -42,6 +43,10 @@ const LandingPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-white dark:bg-slate-950 overflow-x-hidden">
+      <SEO 
+        title="Interactive Learning Redefined" 
+        description="Master modern tech with interactive labs, real-time environments, and collaborative learning."
+      />
       {/* Interactive Background Elements */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-violet-200/20 blur-[120px] animate-pulse" />

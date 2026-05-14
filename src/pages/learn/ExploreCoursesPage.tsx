@@ -9,6 +9,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Globe2, Plus } from 'lucide-react';
 import { SubjectCard } from '@/components/shared/SubjectCard';
+import SEO from '@/components/shared/SEO';
 
 export const ExploreCoursesPage = () => {
   const [search, setSearch] = useState('');
@@ -30,6 +31,7 @@ export const ExploreCoursesPage = () => {
 
   return (
     <div className="space-y-6">
+      <SEO title="Explore Courses" description="Discover and browse all educational courses available in QuickLabs Pro." />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="mb-2 flex items-center gap-2 text-muted-foreground">

@@ -66,6 +66,7 @@ import { toast } from 'react-hot-toast';
 import { useGetAllBranches, useGetUniversities } from '@/hooks/useAcademicMeta';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { Share2, Check } from 'lucide-react';
+import SEO from '@/components/shared/SEO';
 
 function MetaRow({
   label,
@@ -425,6 +426,10 @@ export const DocumentDetailPage = () => {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 xl:max-w-400">
+      <SEO 
+        title={doc?.title || 'Document Details'} 
+        description={doc?.description || 'View shared documents and materials.'}
+      />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <Button

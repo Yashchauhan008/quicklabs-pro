@@ -13,6 +13,7 @@ import { isStudentRole } from '@/utils/roles';
 import { Globe2, Upload, Loader2 } from 'lucide-react';
 import { MaterialCard } from '@/components/shared/MaterialCard';
 import { useInView } from 'react-intersection-observer';
+import SEO from '@/components/shared/SEO';
 
 export const ExploreMaterialsPage = () => {
   const { user } = useAuth();
@@ -61,6 +62,7 @@ export const ExploreMaterialsPage = () => {
 
   return (
     <div className="space-y-6">
+      <SEO title="Explore Materials" description="Browse public files, whitepapers, and best practice guides across all courses." />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="mb-2 flex items-center gap-2 text-muted-foreground">

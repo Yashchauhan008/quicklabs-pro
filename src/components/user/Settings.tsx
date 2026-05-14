@@ -20,6 +20,7 @@ import { SlidersHorizontal, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { resolvePublicFileUrl } from '@/utils/publicFileUrl';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import SEO from '@/components/shared/SEO';
 
 export const Settings = () => {
   const [universityName, setUniversityName] = useState('');
@@ -45,6 +46,7 @@ export const Settings = () => {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
+      <SEO title="Settings & Preferences" description="Manage your QuickLabs Pro account settings and preferences." />
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Preferences</h1>
         <p className="mt-1 text-muted-foreground">

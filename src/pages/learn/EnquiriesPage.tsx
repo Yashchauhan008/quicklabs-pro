@@ -21,6 +21,7 @@ import {
 import type { EnquirySort, EnquiryStatus } from '@/types/student';
 import { formatDateTime } from '@/utils/formate';
 import { Plus, FilePlus, BookPlus, AlertCircle, MessageSquare } from 'lucide-react';
+import SEO from '@/components/shared/SEO';
 
 export const EnquiriesPage = () => {
   const [page, setPage] = useState(1);
@@ -62,6 +63,7 @@ export const EnquiriesPage = () => {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
+      <SEO title="Student Enquiries" description="View and manage subject requests and learning material inquiries." />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Button variant="ghost" asChild className="mb-2 -ml-2 rounded-lg">

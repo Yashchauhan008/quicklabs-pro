@@ -10,6 +10,7 @@ import { isStudentRole } from '@/utils/roles';
 import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
 import { ROUTES } from '@/config';
+import SEO from '@/components/shared/SEO';
 
 export const Profile = () => {
   const { user } = useAuth();
@@ -27,6 +28,7 @@ export const Profile = () => {
   if (!user) {
     return (
       <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-dashed bg-card/50">
+        <SEO title="Loading Profile..." />
         <p className="text-sm text-muted-foreground">Loading your profile…</p>
       </div>
     );
@@ -36,6 +38,7 @@ export const Profile = () => {
 
   return (
     <div className="pb-12">
+      <SEO title={user.name || 'Profile'} description="View and manage your academic profile, shared materials, and courses." />
       <div className="mx-auto mb-4 flex max-w-3xl justify-end px-0">
         <Button asChild variant="outline" size="sm" className="rounded-lg">
           <Link to={ROUTES.PROFILE_EDIT}>
