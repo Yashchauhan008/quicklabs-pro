@@ -64,6 +64,8 @@ import { cn } from '@/lib/utils';
 import { fileDedupeKey, mergeIntoFileList } from '@/utils/stageUploadFiles';
 import { toast } from 'react-hot-toast';
 import { useGetAllBranches, useGetUniversities } from '@/hooks/useAcademicMeta';
+import { LoginModal } from '@/components/auth/LoginModal';
+import { Share2, Check } from 'lucide-react';
 
 function MetaRow({
   label,
@@ -88,7 +90,7 @@ function tabLabel(att: DocumentAttachment): string {
 }
 
 export const DocumentDetailPage = () => {
-  const { user } = useAuth();
+  const { user, isLoggedIn, isLoadingUser } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -103,6 +105,8 @@ export const DocumentDetailPage = () => {
   const [removeAttachmentId, setRemoveAttachmentId] = useState<string | null>(
     null,
   );
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const [addFiles, setAddFiles] = useState<File[]>([]);
   const [addMainIndex, setAddMainIndex] = useState(0);
@@ -120,6 +124,23 @@ export const DocumentDetailPage = () => {
   const addAttachmentsMutation = useAddDocumentAttachments(id ?? '');
   const patchAttachmentMutation = usePatchDocumentAttachment(id ?? '');
   const deleteAttachmentMutation = useDeleteDocumentAttachment(id ?? '');
+
+  useEffect(() => {
+    if (!isLoadingUser && !isLoggedIn) {
+      setShowLoginModal(true);
+    }
+  }, [isLoadingUser, isLoggedIn]);
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      toast.success('Link copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast.error('Failed to copy link');
+    }
+  };
 
   const attachments = doc?.files ?? [];
 
@@ -289,7 +310,7 @@ export const DocumentDetailPage = () => {
     return <p className="text-muted-foreground">Missing document id</p>;
   }
 
-  if (isLoading) {
+  if (isLoading || isLoadingUser) {
     return (
       <div className="mx-auto w-full max-w-7xl space-y-4 xl:max-w-400">
         <Skeleton className="h-9 w-2/3 max-w-md" />
@@ -299,7 +320,7 @@ export const DocumentDetailPage = () => {
     );
   }
 
-  if (isError || !doc) {
+  if (isError || (!doc && isLoggedIn)) {
     return (
       <div className="space-y-4">
         <p className="text-destructive">This document could not be found.</p>
@@ -316,7 +337,26 @@ export const DocumentDetailPage = () => {
     );
   }
 
-  if (!attachments.length) {
+  if (!isLoggedIn) {
+    return (
+      <div className="mx-auto w-full max-w-7xl space-y-4 xl:max-w-400">
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-10 w-2/3 max-w-md" />
+          <div className="flex gap-2">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-5 w-16" />
+          </div>
+        </div>
+        <Skeleton className="h-[500px] w-full rounded-xl" />
+        <LoginModal 
+          isOpen={showLoginModal} 
+          onClose={() => navigate(ROUTES.EXPLORE_MATERIALS)} 
+        />
+      </div>
+    );
+  }
+
+  if (!attachments.length || !doc) {
     return (
       <div className="space-y-4">
         <p className="text-muted-foreground">This document has no files.</p>
@@ -469,6 +509,14 @@ export const DocumentDetailPage = () => {
           >
             <Download className="mr-2 h-4 w-4" />
             {downloadMutation.isPending ? 'Downloading…' : 'Download all (ZIP)'}
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-lg border-violet-200 bg-violet-50/50 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-900/20"
+            onClick={handleShare}
+          >
+            {copied ? <Check className="mr-2 h-4 w-4 text-emerald-500" /> : <Share2 className="mr-2 h-4 w-4 text-violet-600" />}
+            {copied ? 'Copied!' : 'Share'}
           </Button>
           {isOwner ? (
             <>
@@ -663,6 +711,17 @@ export const DocumentDetailPage = () => {
           </dl>
         </section>
       </div>
+
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => {
+          if (!isLoggedIn) {
+            navigate(ROUTES.EXPLORE_MATERIALS);
+          } else {
+            setShowLoginModal(false);
+          }
+        }} 
+      />
 
       {isOwner ? (
         <>

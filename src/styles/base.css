@@ -203,6 +203,38 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@layer utilities {
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes tools-infinite-marquee-y {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(0, -50%, 0);
+    }
+  }
+  .animate-tools-infinite-marquee-y {
+    animation: tools-infinite-marquee-y var(--tools-marquee-duration, 40s) linear infinite;
+    will-change: transform;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-tools-infinite-marquee-y {
+      animation: none;
+    }
+    .animate-tools-infinite-marquee-y > div:last-child {
+      display: none;
+    }
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

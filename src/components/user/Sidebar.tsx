@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   Crown,
   Trophy,
+  Wrench,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { ROUTES } from '@/config';
@@ -57,6 +58,12 @@ const learnNav: NavItem[] = [
     href: ROUTES.EXPLORE_MATERIALS,
     icon: LayoutGrid,
     isActive: (p) => p === ROUTES.EXPLORE_MATERIALS,
+  },
+  {
+    name: 'Tools',
+    href: ROUTES.EXPLORE_TOOLS,
+    icon: Wrench,
+    isActive: (p) => p.startsWith(ROUTES.EXPLORE_TOOLS),
   },
   {
     name: 'Super Desk',

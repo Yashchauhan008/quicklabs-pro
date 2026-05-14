@@ -66,4 +66,5 @@ export const PRIVATE_STATIC_ACCESS_TOKEN =
     ENQUIRY_NEW: '/learn/enquiries/new',
     SUPER_DESK: '/learn/super-desk',
     LEADERBOARD: '/learn/leaderboard',
+    EXPLORE_TOOLS: '/learn/tools',
   } as const;

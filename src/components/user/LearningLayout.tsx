@@ -9,6 +9,7 @@ import { BookOpen, House, Library, Menu, UserRound } from 'lucide-react';
 import { ROUTES } from '@/config';
 import { useAuth } from '@/context/AuthContext';
 import { UserAvatar } from '@/components/shared/UserAvatar';
+import { ToolsInfiniteRail } from '@/components/user/ToolsInfiniteRail';
 
 const headerNav = [
   {
@@ -131,6 +132,7 @@ export const LearningLayout = () => {
           </div>
         </main>
       </div>
+      <ToolsInfiniteRail />
       <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
         <SheetContent side="left" className="w-[92vw] max-w-[360px] p-0">
           <Sidebar

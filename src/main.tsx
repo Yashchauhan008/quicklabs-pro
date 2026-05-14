@@ -9,7 +9,7 @@ import { googleConfig } from '@/config';
 import './styles/base.css';
 
 //todo: why we used QueryClient
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000,

@@ -28,6 +28,7 @@ import { EnquiryCreatePage } from '@/pages/learn/EnquiryCreatePage';
 import { ExploreCoursesPage } from '@/pages/learn/ExploreCoursesPage';
 import { ExploreMaterialsPage } from '@/pages/learn/ExploreMaterialsPage';
 import { LeaderboardPage } from '@/pages/learn/LeaderboardPage';
+import { ExploreToolsPage } from '@/pages/learn/ExploreToolsPage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isLoggedIn, isLoadingUser } = useAuth();
@@ -57,49 +58,42 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Navigate to={ROUTES.LOGIN} replace />} />
 
-            <Route
-              path="/learn"
-              element={
-                <ProtectedRoute>
-                  <LearningLayout />
-                </ProtectedRoute>
-              }
-            >
+            <Route path="/learn" element={<LearningLayout />}>
               <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="courses" element={<ExploreCoursesPage />} />
-              <Route path="materials" element={<ExploreMaterialsPage />} />
+              
+              {/* Strictly Protected Children */}
+              <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="courses" element={<ProtectedRoute><ExploreCoursesPage /></ProtectedRoute>} />
+              <Route path="materials" element={<ProtectedRoute><ExploreMaterialsPage /></ProtectedRoute>} />
               <Route
                 path="course/create"
                 element={
-                  !IS_DEVELOPMENT ? (
-                    <Navigate to={ROUTES.EXPLORE_COURSES} replace />
-                  ) : (
-                    <SubjectFormPage />
-                  )
+                  <ProtectedRoute>
+                    {!IS_DEVELOPMENT ? <Navigate to={ROUTES.EXPLORE_COURSES} replace /> : <SubjectFormPage />}
+                  </ProtectedRoute>
                 }
               />
-              <Route path="course/:id/edit" element={<SubjectFormPage />} />
-              <Route path="course/:id" element={<SubjectDetailPage />} />
-              <Route path="document/add" element={<DocumentUploadPage />} />
+              <Route path="course/:id/edit" element={<ProtectedRoute><SubjectFormPage /></ProtectedRoute>} />
+              <Route path="course/:id" element={<ProtectedRoute><SubjectDetailPage /></ProtectedRoute>} />
+              <Route path="document/add" element={<ProtectedRoute><DocumentUploadPage /></ProtectedRoute>} />
+              
+              {/* Semi-Public Child (handles its own auth state with a modal) */}
               <Route path="document/:id" element={<DocumentDetailPage />} />
+              
               <Route path="documents" element={<Navigate to={ROUTES.EXPLORE_MATERIALS} replace />} />
-              <Route
-                path="document"
-                element={
-                  <Navigate to={ROUTES.EXPLORE_MATERIALS} replace />
-                }
-              />
-              <Route path="enquiries/new" element={<EnquiryCreatePage />} />
-              <Route path="enquiries" element={<EnquiriesPage />} />
-              <Route path="leaderboard" element={<LeaderboardPage />} />
-              <Route path="super-desk" element={<SuperDeskPage />} />
-              <Route path="peers/:peerId" element={<PeerProfilePage />} />
-              <Route path="peers" element={<PeerLookupPage />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="profile/edit" element={<ProfileEditPage />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="unauthorized" element={<Unauthorized />} />
+              <Route path="document" element={<Navigate to={ROUTES.EXPLORE_MATERIALS} replace />} />
+              
+              <Route path="enquiries/new" element={<ProtectedRoute><EnquiryCreatePage /></ProtectedRoute>} />
+              <Route path="enquiries" element={<ProtectedRoute><EnquiriesPage /></ProtectedRoute>} />
+              <Route path="leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
+              <Route path="super-desk" element={<ProtectedRoute><SuperDeskPage /></ProtectedRoute>} />
+              <Route path="peers/:peerId" element={<ProtectedRoute><PeerProfilePage /></ProtectedRoute>} />
+              <Route path="peers" element={<ProtectedRoute><PeerLookupPage /></ProtectedRoute>} />
+              <Route path="tools" element={<ProtectedRoute><ExploreToolsPage /></ProtectedRoute>} />
+              <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="profile/edit" element={<ProtectedRoute><ProfileEditPage /></ProtectedRoute>} />
+              <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="unauthorized" element={<ProtectedRoute><Unauthorized /></ProtectedRoute>} />
             </Route>
 
             <Route path="/" element={<LandingPage />} />
